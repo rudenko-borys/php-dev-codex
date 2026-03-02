@@ -1,7 +1,7 @@
 # PHP developer codex :notebook_with_decorative_cover:
 
-[![PHP](https://img.shields.io/badge/v8.1-blue?logo=php&labelColor=grey&logoColor=white)](https://www.php.net)
-[![Symfony](https://img.shields.io/badge/v6.1-blue?logo=symfony&labelColor=grey)](https://symfony.com/doc/6.1/index.html)
+[![PHP](https://img.shields.io/badge/v8.3-blue?logo=php&labelColor=grey&logoColor=white)](https://www.php.net)
+[![Symfony](https://img.shields.io/badge/v6.4-blue?logo=symfony&labelColor=grey)](https://symfony.com/doc/6.4/index.html)
 
 <a href="https://github.com/vshymanskyy/StandWithUkraine/blob/main/docs/README.md">
   <img src="https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-no-action.svg" alt="Stand With Ukraine" />
@@ -22,12 +22,17 @@
     * [Assignments in conditions](#assignments-in-conditions)
     * [Unnecessary variables](#unnecessary-variables)
     * [Unnecessary structures](#unnecessary-structures)
+    * [If usage](#if-usage)
     * [Double quotes](#double-quotes)
     * [String concatenation](#string-concatenation)
     * [Method visibility](#method-visibility)
     * [Small and understandable methods](#small-and-understandable-methods)
     * [Subtyping exceptions](#subtyping-exceptions)
-    * [Dates](#dates)
+    * [Catching exceptions](#catching-exceptions)
+    * [Extract try catch blocks](#extract-try-catch-blocks)
+    * [Immutable dates](#immutable-dates)
+    * [Readonly modifier](#readonly-modifier)
+    * [Function arguments](#function-arguments)
     * [Redundant PhpDoc](#redundant-phpdoc)
     * [PhpDoc on arrays](#phpdoc-on-arrays)
     * [Comment styles](#comment-styles)
@@ -414,6 +419,107 @@ if ($first && $second) {
 
 > **Why?** To reduce code complexity.
 
+### If usage
+
+Reduce `if` usage as much as possible.
+
+- Don’t use `if-else` construction at all. Simplify or extract that logic to a separate method.
+- If there are several `if`s with different conditions - it is better to consider using `match`.
+- Good `if` construction usually will have `return` inside of `if`.
+- Don’t use nested `if`s in any case.
+- If there is a lot of code inside `if` construction - you should reverse the condition body, make `return` inside of the `if` and write logic after this `if`.
+
+<table>
+    <thead>
+        <tr>
+            <th>:x: Wrong</th>
+            <th>:white_check_mark: Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+if ($condition) {
+    return $value;
+} else {
+    return null;
+}
+```
+
+</td>
+<td>
+
+```php
+return $condition ? $value : null;
+```
+
+</td>
+        </tr>
+        <tr>
+<td>
+
+```php
+if ($first) {
+    // ...
+} elseif ($second) {
+    // ...
+} else {
+    // ...
+}
+```
+
+</td>
+<td>
+
+```php
+match (true) {
+    $first => doFirst(),
+    $second => doSecond(),
+    default => doDefault(),
+};
+```
+
+</td>
+        </tr>
+        <tr>
+<td>
+
+```php
+if ($condition) {
+    // a lot of code
+    // ...
+    // ...
+
+    return $result;
+}
+
+return null;
+```
+
+</td>
+<td>
+
+```php
+if (!$condition) {
+    return null;
+}
+
+// a lot of code
+// ...
+// ...
+
+return $result;
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** To reduce code complexity and improve readability.
+
 ### Double quotes
 
 Don't use double quotes in simple strings.
@@ -424,6 +530,8 @@ Don't use double quotes in simple strings.
 - Some special symbols are used, like `"\n"`
 
 Don't use auto variable includes in double quotes (`"Hello $name!"` or `"Hello {$object->name}!"`).
+
+> **Why?** To keep quotes usage consistent.
 
 ### String concatenation
 
@@ -462,6 +570,7 @@ Use `public` visibility only when method is called from outside of class.
 
 Try (hard) to write code that is self-explanatory. This implies writing small methods by looking at which you can
 understand what the method does. Also try to name methods by their meaning, which also helps to understand the code.
+Maximum `50` lines, except forms, data tables and other similar methods that requires a lot of configuration.
 
 ### Subtyping exceptions
 
@@ -515,12 +624,209 @@ Custom exception does not need to contain any code. It just needs to extend the 
 > **Why?** This greatly simplifies debugging and troubleshooting because you can easily determine the type of error
 > that occurred. Additionally, creating custom exception classes also helps keep code organised and maintainable.
 
-### Dates
+### Catching exceptions
 
-Instead of manually applying defensive techniques in order to prevent unexpected mutation when passing around
+Never catch base `Exception` class except where it’s thrown from vendor code.
+
+In any case, never catch exception if there are few throwing places possible and only one is expected.
+
+<table>
+    <thead>
+        <tr>
+            <th>:x: Wrong</th>
+            <th>:white_check_mark: Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+try {
+    $this->someDeepMethod();
+} catch (Exception) {
+    return null;
+}
+```
+
+</td>
+<td>
+
+```php
+try {
+    $this->someDeepMethod();
+} catch (EntityNotFoundException) {
+    return null;
+} catch (UnknownProductTypeException $exception) {
+    $this->productLogger->error($exception->getMessage());
+
+    return null;
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** It is easier to find an issue if there is only one place where it happens.
+
+### Extract try catch blocks
+
+Extract the bodies of the `try` and `catch` blocks out into functions of their own. Try/catch blocks confuse the
+structure of the code and mix error processing with normal processing.
+
+<table>
+    <thead>
+        <tr>
+            <th>:x: Wrong</th>
+            <th>:white_check_mark: Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+try {
+    // a lot of code
+    // ...
+    // ...
+} catch (Exception) {
+    // a lot of code
+    // ...
+    // ...
+}
+```
+
+</td>
+<td>
+
+```php
+try {
+    $this->someDeepMethod();
+} catch (UnknownProductTypeException $exception) {
+    $this->handleError($exception);
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** To provide a nice separation that makes the code easier to understand and modify.
+
+### Immutable dates
+
+Instead of manually applying defensive techniques to prevent unexpected mutation when passing around
 date/time objects, use `DateTimeImmutable` that encapsulates those techniques, making your code more reliable.
 
 > **Why?** To avoid object cloning and bugs.
+
+### Readonly modifier
+
+Prefer using readonly classes and properties. The only exception is a class that needs internal caching via property.
+
+<table>
+    <thead>
+        <tr>
+            <th>:x: Wrong</th>
+            <th>:white_check_mark: Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+class UserModel
+{
+    private string $name;
+
+    private string $email;
+    
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
+    
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    public function setEmail(string $email): void
+    {
+        $this->email = $email;
+    }
+}
+```
+
+</td>
+<td>
+
+```php
+readonly class UserModel
+{
+    public function __construct(
+        public string $name,
+        public string $email,
+    ) {
+    }
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** Readonly class prevents the creation of dynamic properties. Readonly property prevents modification of the
+> property after initialization.
+
+### Function arguments
+
+The maximum number of function parameters should be three. Every argument you add to a function signature makes that
+function harder to understand. If more than three arguments are needed - put them into an object.
+
+<table>
+    <thead>
+        <tr>
+            <th>:x: Wrong</th>
+            <th>:white_check_mark: Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+function createUser(string $name, string $email, int $age, string $country) {
+    // ...
+}
+```
+
+</td>
+<td>
+
+```php
+function createUser(CreateUserModel $model) {
+    // ...
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** To make code more maintainable, scalable and easier to read.
 
 ### Redundant PhpDoc
 
