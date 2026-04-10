@@ -16,23 +16,23 @@
     * [Strict comparison operators](#strict-comparison-operators)
     * [Comparison order](#comparison-order)
     * [Comparing to boolean](#comparing-to-boolean)
-    * [Checking things explicitly](#checking-things-explicitly)
+    * [Check things explicitly](#check-things-explicitly)
     * [Match expression](#match-expression)
     * [Trailing comma](#trailing-comma)
     * [Assignments in conditions](#assignments-in-conditions)
-    * [Unnecessary variables](#unnecessary-variables)
-    * [Unnecessary structures](#unnecessary-structures)
-    * [If usage](#if-usage)
+    * [Avoid unnecessary variables](#avoid-unnecessary-variables)
+    * [Avoid unnecessary structures](#avoid-unnecessary-structures)
+    * [Keep if statements simple](#keep-if-statements-simple)
     * [Double quotes](#double-quotes)
     * [String concatenation](#string-concatenation)
     * [Method visibility](#method-visibility)
-    * [Small and understandable methods](#small-and-understandable-methods)
+    * [Write small and understandable methods](#write-small-and-understandable-methods)
     * [Subtyping exceptions](#subtyping-exceptions)
     * [Catching exceptions](#catching-exceptions)
     * [Extract try catch blocks](#extract-try-catch-blocks)
-    * [Immutable dates](#immutable-dates)
+    * [Use immutable dates](#use-immutable-dates)
     * [Readonly modifier](#readonly-modifier)
-    * [Function arguments](#function-arguments)
+    * [Reduce function arguments](#reduce-function-arguments)
     * [Redundant PhpDoc](#redundant-phpdoc)
     * [PhpDoc on arrays](#phpdoc-on-arrays)
     * [Comment styles](#comment-styles)
@@ -79,7 +79,7 @@ file, before any other statements.
 Use `===` (`!==`) instead of `==` (`!=`) everywhere. To compare without type checking type, cast both of the arguments
 (for example to a string) and compare with `===`.
 
-Same applies for `in_array` - always pass third argument as `true` for strict checking.
+The same applies for `in_array` - always pass third argument as `true` for strict checking.
 
 > **Why?** For security reasons and to avoid bugs.
 
@@ -108,24 +108,19 @@ Don't use `true`/`false` keywords when checking variable which is already boolea
 return strpos('needle', 'haystack') === false;
 ```
 
-### Checking things explicitly
+### Check things explicitly
 
-Use only functions or conditions that are designed for specific task. Don’t use unrelated features, even if they give
-required result with less code.
+Use only functions and conditions that match the exact intent of the check. Avoid unrelated constructs, even if they
+produce the desired result with less code.
 
-- use `isset` instead of `empty` to check if array element is defined
-
-- use `count($array) > 0` instead of `!empty($array)` to check if array is not empty, as we do not want to check
-  whether `$array` is `0`, `false`, `''` or even not defined at all (in which case IDE would possibly hide some warnings
-  that could help noticing possible bugs)
-
-- use `$x !== ''` instead of `strlen($x) > 0` - length of `$x` has nothing to do with what we are trying to check here,
-  even if it gives the needed result
+- use `isset` instead of `empty` to check whether something is defined
+- use `$array !== []` instead of `!empty($array)` to check whether an array is not empty
+- use `$x !== ''` instead of `strlen($x) > 0` to check whether a string is not empty
 
 Use all of the above even in cases where side effects are almost impossible.
 
-> **Why?** To avoid side effects if any related code changes. The code is much easier to understand when you see
-> specific checks or function calls instead of something unrelated that happens to give the needed result.
+> **Why?** To avoid side effects. Explicit checks are easier to read, less surprising, and safer if the surrounding
+> code changes later.
 
 ### Match expression
 
@@ -215,8 +210,6 @@ public function create(
         'name' => $modle->name,
         'type' => $modle->type
     ];
-
-    // ...
 }
 ```
 
@@ -232,8 +225,6 @@ public function create(
         'name' => $modle->name,
         'type' => $modle->type,
     ];
-
-    // ...
 }
 ```
 
@@ -303,9 +294,9 @@ if ($product !== null) {
 > **Why?** By saving a few lines of code, the code becomes less clear - several actions occur at once.
 > Furthermore, when explicitly comparing to `null`, the conditional assignment statements become more complicated.
 
-### Unnecessary variables
+### Avoid unnecessary variables
 
-Avoid unnecessary variables.
+Avoid temporary variables when they don't clarify the code.
 
 <table>
     <thead>
@@ -368,7 +359,7 @@ function getValue(): int
     </tbody>
 </table>
 
-**Exception:** use variables to make code more understandable. For example:
+**Exception:** use variables when they improve readability or help explain a complex condition. For example:
 
 ```php
 function canModify($object): bool
@@ -380,9 +371,11 @@ function canModify($object): bool
 }
 ```
 
-### Unnecessary structures
+> **Why?** Extra variables add noise, but useful variables can make the code easier to understand.
 
-Avoid unnecessary structures.
+### Avoid unnecessary structures
+
+Avoid nested conditions when a single condition is enough.
 
 <table>
     <thead>
@@ -417,17 +410,17 @@ if ($first && $second) {
     </tbody>
 </table>
 
-> **Why?** To reduce code complexity.
+> **Why?** To reduce code complexity. Nested conditions are harder to read and reason about.
 
-### If usage
+### Keep if statements simple
 
 Reduce `if` usage as much as possible.
 
-- Don’t use `if-else` construction at all. Simplify or extract that logic to a separate method.
-- If there are several `if`s with different conditions - it is better to consider using `match`.
-- Good `if` construction usually will have `return` inside of `if`.
-- Don’t use nested `if`s in any case.
-- If there is a lot of code inside `if` construction - you should reverse the condition body, make `return` inside of the `if` and write logic after this `if`.
+- Prefer simplifying the logic or extracting it into a separate method.
+- Use `match` for multiple conditions where possible.
+- Apply the "Early Return" pattern.
+- Avoid nested `if` statements.
+- Invert heavy blocks: reverse the condition of the large `if` block to keep the main logic at the top level.
 
 <table>
     <thead>
@@ -462,11 +455,11 @@ return $condition ? $value : null;
 
 ```php
 if ($first) {
-    // ...
+    doFirst();
 } elseif ($second) {
-    // ...
+    doSecond();
 } else {
-    // ...
+    doDefault();
 }
 ```
 
@@ -518,7 +511,7 @@ return $result;
     </tbody>
 </table>
 
-> **Why?** To reduce code complexity and improve readability.
+> **Why?** Simpler control flow is easier to read, test, and maintain.
 
 ### Double quotes
 
@@ -566,11 +559,15 @@ Use `public` visibility only when method is called from outside of class.
 > **Why?** It's easier to refactor, find usages, plan possible changes in code. Also, IDE can warn about unused methods
 > or properties.
 
-### Small and understandable methods
+### Write small and understandable methods
 
-Try (hard) to write code that is self-explanatory. This implies writing small methods by looking at which you can
-understand what the method does. Also try to name methods by their meaning, which also helps to understand the code.
-Maximum `50` lines, except forms, data tables and other similar methods that requires a lot of configuration.
+To minimize a cognitive load, favor small, encapsulated methods that are easy to reason about. Implement
+self-explanatory logic by utilizing expressive naming conventions that communicate the method's intent clearly.
+
+To prevent "God Methods", maintain a maximum threshold of `50` lines per function.
+
+**Exception:** in cases of high-density declarative configuration (such as schema definitions or form layouts), where
+line count increases due to structural complexity rather than procedural logic.
 
 ### Subtyping exceptions
 
@@ -717,7 +714,7 @@ try {
 
 > **Why?** To provide a nice separation that makes the code easier to understand and modify.
 
-### Immutable dates
+### Use immutable dates
 
 Instead of manually applying defensive techniques to prevent unexpected mutation when passing around
 date/time objects, use `DateTimeImmutable` that encapsulates those techniques, making your code more reliable.
@@ -790,7 +787,7 @@ readonly class UserModel
 > **Why?** Readonly class prevents the creation of dynamic properties. Readonly property prevents modification of the
 > property after initialization.
 
-### Function arguments
+### Reduce function arguments
 
 The maximum number of function parameters should be three. Every argument you add to a function signature makes that
 function harder to understand. If more than three arguments are needed - put them into an object.
@@ -826,7 +823,7 @@ function createUser(CreateUserModel $model) {
     </tbody>
 </table>
 
-> **Why?** To make code more maintainable, scalable and easier to read.
+> **Why?** To make code more maintainable, scalable, and easier to read.
 
 ### Redundant PhpDoc
 
@@ -848,11 +845,11 @@ public function getProducts(): Collection;
 ```
 
 > **Why?** Most IDEs, such as PhpStorm, can apply auto-completion or warn you of non-existing methods by reading this
-> information and inferring the types of variables, properties and even method return values.
+> information and inferring the types of variables, properties, and even method return values.
 
 ### Comment styles
 
-Use multi-line `/** */` comments for method, property and class annotations.
+Use multi-line `/** */` comments for method, property, and class annotations.
 
 Use single-line `/** @var Class $object */` annotation for local variables. Try to avoid this if possible - usually
 PhpDoc is enough (sometimes it's missing, for example in vendor code).
@@ -1366,7 +1363,7 @@ class UserManager
 
 ### Branch naming
 
-1. Use only lowercase letters, numbers and hyphens
+1. Use only lowercase letters, numbers, and hyphens
 2. Use a unique ID based on issue ID
 3. Use the issue name for the branch name
 4. Name must not exceed 8 words (excluding ID)
