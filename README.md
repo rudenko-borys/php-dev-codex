@@ -12,16 +12,16 @@
 ## Table of contents
 
 - [Code style and basics](#code-style-and-basics)
-    * [Strict typing](#strict-typing)
-    * [Strict comparison operators](#strict-comparison-operators)
+    * [Enable strict typing](#enable-strict-typing)
+    * [Use strict comparison operators](#use-strict-comparison-operators)
     * [Comparison order](#comparison-order)
     * [Comparing to boolean](#comparing-to-boolean)
     * [Check things explicitly](#check-things-explicitly)
-    * [Match expression](#match-expression)
-    * [Trailing comma](#trailing-comma)
-    * [Assignments in conditions](#assignments-in-conditions)
+    * [Prefer match expressions](#prefer-match-expressions)
+    * [Add trailing comma](#add-trailing-comma)
+    * [Avoid assignments in conditions](#avoid-assignments-in-conditions)
     * [Avoid unnecessary variables](#avoid-unnecessary-variables)
-    * [Avoid unnecessary structures](#avoid-unnecessary-structures)
+    * [Avoid unnecessary nesting](#avoid-unnecessary-nesting)
     * [Keep if statements simple](#keep-if-statements-simple)
     * [Double quotes](#double-quotes)
     * [String concatenation](#string-concatenation)
@@ -67,21 +67,71 @@
 PHP code style extends [PSR-1](https://www.php-fig.org/psr/psr-1) and [PSR-12](https://www.php-fig.org/psr/psr-12),
 so code must also follow these standards to be compatible with this codex.
 
-### Strict typing
+### Enable strict typing
 
-Always enable strict typing mode by placing the `declare(strict_types=1);` directive at the beginning of the script
-file, before any other statements.
+Every PHP script must include the `declare(strict_types=1);` directive as the very first statement in the file.
 
-> **Why?** It helps to prevent bugs.
+<table>
+    <thead>
+        <tr>
+            <th>:x: Wrong</th>
+            <th>:white_check_mark: Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
 
-### Strict comparison operators
+```php
+<?php
 
-Use `===` (`!==`) instead of `==` (`!=`) everywhere. To compare without type checking type, cast both of the arguments
-(for example to a string) and compare with `===`.
+namespace App\Entity;
 
-The same applies for `in_array` - always pass third argument as `true` for strict checking.
+class User
+{
+    //...
+}
+```
 
-> **Why?** For security reasons and to avoid bugs.
+</td>
+<td>
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Entity;
+
+class User
+{
+    //...
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** To ensure type integrity across the application and to prevent type coercion bugs that are hard to detect.
+
+### Use strict comparison operators
+
+Always use strict comparison operators (`===` and `!==`) instead of loose operators (`==` and `!=`). If a type-agnostic
+comparison is required, perform an explicit cast on both operands (e.g., `(string)$a === (string)$b`) before comparing
+with the strict operator.
+
+For `in_array()`, always set the third parameter (`$strict`) to `true` to ensure elements are checked for both value
+and type.
+
+| :x: Wrong:                     | :white_check_mark: Right:                    |
+|--------------------------------|----------------------------------------------|
+| `$value == null`               | `$value === null`                            |
+| `in_array($needle, $haystack)` | `in_array($needle, $haystack, strict: true)` |
+
+> **Why?** To prevent bugs caused by unexpected type conversion and to ensure the application is secure against
+> type-juggling attacks.
 
 ### Comparison order
 
@@ -93,38 +143,44 @@ Put static value (`true`, `false`, `null`, `enum`) in the right of comparison op
 
 > **Why?** Speak clearly to be understood correctly, you must. Yes, hmmm.
 
-### Comparing to boolean
+### Compare booleans directly
 
-Don't use `true`/`false` keywords when checking variable which is already boolean.
+Don't perform identity comparisons against `true` or `false` when a variable is already of type `boolean`.
 
 | :x: Wrong:                 | :white_check_mark: Right: |
 |----------------------------|---------------------------|
 | `return $valid === true;`  | `return $valid;`          |
 | `return $valid !== false;` | `return !$valid;`         |
 
-**Exception:** when variable can be not only `boolean`, but also `int` or `null`.
+**Exception:** when a variable is not strictly `boolean`.
 
 ```php
 return strpos('needle', 'haystack') === false;
 ```
+
+> **Why?** To reduce complexity.
 
 ### Check things explicitly
 
 Use only functions and conditions that match the exact intent of the check. Avoid unrelated constructs, even if they
 produce the desired result with less code.
 
-- use `isset` instead of `empty` to check whether something is defined
-- use `$array !== []` instead of `!empty($array)` to check whether an array is not empty
-- use `$x !== ''` instead of `strlen($x) > 0` to check whether a string is not empty
+| :x: Wrong:           | :white_check_mark: Right: |
+|----------------------|---------------------------|
+| `empty($value)`      | `isset($value)`           |
+| `!empty($array)`     | `$array !== []`           |
+| `strlen($value) > 0` | `$value !== ''`           |
 
 Use all of the above even in cases where side effects are almost impossible.
 
 > **Why?** To avoid side effects. Explicit checks are easier to read, less surprising, and safer if the surrounding
 > code changes later.
 
-### Match expression
+### Prefer match expressions
 
-The `match` expression is a powerful feature that will often be the better choice to using `switch`.
+Use `match` instead of `switch` to simplify conditional logic and reduce the "cognitive load" required to read the code.
+Unlike the `switch` statement, which is used for executing blocks of code, `match` is an expression that returns a
+value.
 
 <table>
     <thead>
@@ -186,7 +242,7 @@ $message = match ($statusCode) {
 
 > **Why?** For strict type checks and to avoid huge obscure and hard to read structures.
 
-### Trailing comma
+### Add trailing comma
 
 Always add a trailing comma in multiline arrays, objects, functions, etc.
 
@@ -207,8 +263,8 @@ public function create(
     User $user
 ): Product {
     $data = [
-        'name' => $modle->name,
-        'type' => $modle->type
+        'name' => $model->name,
+        'type' => $model->type
     ];
 }
 ```
@@ -222,8 +278,8 @@ public function create(
     User $user,
 ): Product {
     $data = [
-        'name' => $modle->name,
-        'type' => $modle->type,
+        'name' => $model->name,
+        'type' => $model->type,
     ];
 }
 ```
@@ -233,11 +289,12 @@ public function create(
     </tbody>
 </table>
 
-> **Why?** This leads to cleaner git diffs and simplify adding and removing items.
+> **Why?** This leads to cleaner git diffs and simplifies adding and removing items.
 
-### Assignments in conditions
+### Avoid assignments in conditions
 
-Don't use assignments inside conditional statements.
+Don't perform assignments within conditional statements. All variable assignments must be completed as independent
+statements before the condition is evaluated.
 
 <table>
     <thead>
@@ -252,36 +309,32 @@ Don't use assignments inside conditional statements.
 
 ```php
 if (
-    ($b = $a->get()) !== null 
-    && ($c = $b->get()) !== null
+    ($action = $process->getAction()) !== null 
+    && ($result = $action->getResult()) !== null
 ) {
-    return $c->do();
+    return $result->getData();
 }
 
-if ($product = $this->findProduct()) {
-    return $product->isActive();
-}
+// ...
 ```
 
 </td>
 <td>
 
 ```php
-$b = $a->get();
+$action = $process->getAction();
 
-if ($b !== null) {
-    $c = $b->get();
-
-    if ($c !== null) {
-       return $c->do();
-    }
+if ($action === null) {
+    return [];
 }
 
-$product = $this->findProduct();
+$result = $action->getResult();
 
-if ($product !== null) {
-    return $product->isActive();
+if ($result !== null) {
+    return $result->getData();
 }
+
+// ...
 ```
 
 </td>
@@ -291,8 +344,8 @@ if ($product !== null) {
 
 **Exception:** in a while loop condition.
 
-> **Why?** By saving a few lines of code, the code becomes less clear - several actions occur at once.
-> Furthermore, when explicitly comparing to `null`, the conditional assignment statements become more complicated.
+> **Why?** Assignments in conditions perform two distinct actions (assignment and comparison) in a single line, making
+> the code harder to read, maintain, and debug.
 
 ### Avoid unnecessary variables
 
@@ -310,7 +363,7 @@ Avoid temporary variables when they don't clarify the code.
 <td>
 
 ```php
-function find($needle, $haystack): bool
+function find(int $needle, array $haystack): bool
 {
     $found = false;
 
@@ -337,7 +390,7 @@ function getValue(): int
 <td>
 
 ```php
-function find($needle, $haystack): bool
+function find(int $needle, array $haystack): bool
 {
     foreach ($haystack as $item) {
         if ($needle === $item) {
@@ -362,18 +415,18 @@ function getValue(): int
 **Exception:** use variables when they improve readability or help explain a complex condition. For example:
 
 ```php
-function canModify($object): bool
+function canModify(Product $product): bool
 {
-    $rightsGranted = isAdmin() || isOwner($object);
-    $objectEditable = isNew($object) && !isLocked($object);
+    $rightsGranted = $this->isAdmin() || $this->isOwner($product);
+    $productEditable = $this->isNew($product) && !$this->isLocked($product);
     
-    return $rightsGranted && $objectEditable;
+    return $rightsGranted && $profileEditable;
 }
 ```
 
 > **Why?** Extra variables add noise, but useful variables can make the code easier to understand.
 
-### Avoid unnecessary structures
+### Avoid unnecessary nesting
 
 Avoid nested conditions when a single condition is enough.
 
@@ -455,11 +508,17 @@ return $condition ? $value : null;
 
 ```php
 if ($first) {
-    doFirst();
+    // a lot of code
+    // ...
+    // ...
 } elseif ($second) {
-    doSecond();
+    // a lot of code
+    // ...
+    // ...
 } else {
-    doDefault();
+    // a lot of code
+    // ...
+    // ...
 }
 ```
 
@@ -468,9 +527,9 @@ if ($first) {
 
 ```php
 match (true) {
-    $first => doFirst(),
-    $second => doSecond(),
-    default => doDefault(),
+    $first => $this->doFirst(),
+    $second => $this->doSecond(),
+    default => $this->doDefault()
 };
 ```
 
@@ -550,7 +609,7 @@ $url = sprintf(
 
 ### Method visibility
 
-Prefer `private` over `protected` over `public` as it constraints the scope.
+Prefer `private` over `protected` over `public` as it constrains the scope.
 
 Use `protected` when intend some property or method to be overwritten if necessary in extending classes.
 
@@ -804,7 +863,12 @@ function harder to understand. If more than three arguments are needed - put the
 <td>
 
 ```php
-function createUser(string $name, string $email, int $age, string $country) {
+function createUser(
+    string $name,
+    string $email,
+    int $age,
+    string $country,
+) {
     // ...
 }
 ```
@@ -1204,7 +1268,7 @@ class RenderQueueModel
 
 ### Fetch-only repository
 
-Use the repository class only for fetching objets from the database. The repository mustn't manage entities and
+Use the repository class only for fetching objects from the database. The repository mustn't manage entities and
 mustn't contain business logic, this is the responsibility of services.
 
 > **Why?** Any logic not related to fetching objects violates the Single Responsibility Principle and Service-Oriented
