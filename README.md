@@ -27,12 +27,13 @@
     * [Prefer sprintf for string concatenation](#prefer-sprintf-for-string-concatenation)
     * [Control scope via visibility](#control-scope-via-visibility)
     * [Write small and understandable methods](#write-small-and-understandable-methods)
-    * [Throw specific exceptions](#throw-specific-exceptions)
-    * [Catch specific exceptions](#catch-specific-exceptions)
-    * [Extract try catch blocks](#extract-try-catch-blocks)
     * [Use immutable dates](#use-immutable-dates)
     * [Use readonly classes and properties](#use-readonly-classes-and-properties)
     * [Reduce function parameters](#reduce-function-parameters)
+- [Exceptions](#exceptions)
+    * [Throw specific exceptions](#throw-specific-exceptions)
+    * [Catch specific exceptions](#catch-specific-exceptions)
+    * [Extract try catch blocks](#extract-try-catch-blocks)
 - [Comments](#comments)
     * [Eliminate redundant PHPDoc](#eliminate-redundant-phpdoc)
     * [Document array element types with PHPDoc](#document-array-element-types-with-phpdoc)
@@ -633,115 +634,6 @@ line count increases due to structural complexity rather than procedural logic.
 
 > **Why?** Small, well-named methods are easier to read, test, and reuse.
 
-### Throw specific exceptions
-
-Never throw the base `Exception` class.
-
-- For domain logic: Create custom exceptions that extend the appropriate SPL exception. They may remain empty; their
-value lies in their type.
-- For standard errors: Utilize existing SPL exceptions for common error states.
-
-| :x: Wrong:                               | :white_check_mark: Right:                           |
-|------------------------------------------|-----------------------------------------------------|
-| `throw new Exception('Invalid token.')`  | `throw new InvalidTokenException('Invalid token.')` |
-| `throw new Exception('Bad input.')`      | `throw new InvalidArgumentException('Bad input.')`  |
-
-> **Why?** Specific exceptions make it easier to identify the error type, handle it precisely, and keep error handling
-> organized.
-
-### Catch specific exceptions
-
-Always catch the most specific exception type available. Never catch base `Exception` or `Throwable` classes.
-
-<table>
-    <thead>
-        <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td>
-
-```php
-try {
-    $this->someDeepMethod();
-} catch (Exception) {
-    return null;
-}
-```
-
-</td>
-<td>
-
-```php
-try {
-    $this->someDeepMethod();
-} catch (EntityNotFoundException) {
-    return null;
-} catch (UnknownProductTypeException $exception) {
-    $this->productLogger->error($exception->getMessage());
-
-    return null;
-}
-```
-
-</td>
-        </tr>
-    </tbody>
-</table>
-
-**Exception:** only catch the base `Exception` class when it comes from vendor code.
-
-> **Why?** Catching specific exceptions makes it clear what error is expected and where it comes from.
-
-### Extract try catch blocks
-
-Extract the bodies of the `try` and `catch` blocks out into functions of their own. Try/catch blocks confuse the
-structure of the code and mix error processing with normal processing.
-
-<table>
-    <thead>
-        <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td>
-
-```php
-try {
-    // a lot of code
-    // ...
-    // ...
-} catch (Exception) {
-    // a lot of code
-    // ...
-    // ...
-}
-```
-
-</td>
-<td>
-
-```php
-try {
-    $this->someDeepMethod();
-} catch (UnknownProductTypeException $exception) {
-    $this->handleError($exception);
-}
-```
-
-</td>
-        </tr>
-    </tbody>
-</table>
-
-> **Why?** To provide a nice separation that makes the code easier to understand and modify.
-
 ### Use immutable dates
 
 All date and time operations must utilize `DateTimeImmutable` instead of `DateTime`.
@@ -891,6 +783,117 @@ function createUser(CreateUserModel $model): User {
 </table>
 
 > **Why?** To make code more maintainable, scalable, and easier to read.
+
+## Exceptions
+
+### Throw specific exceptions
+
+Never throw the base `Exception` class.
+
+- For domain logic: Create custom exceptions that extend the appropriate SPL exception. They may remain empty; their
+  value lies in their type.
+- For standard errors: Utilize existing SPL exceptions for common error states.
+
+| :x: Wrong:                               | :white_check_mark: Right:                           |
+|------------------------------------------|-----------------------------------------------------|
+| `throw new Exception('Invalid token.')`  | `throw new InvalidTokenException('Invalid token.')` |
+| `throw new Exception('Bad input.')`      | `throw new InvalidArgumentException('Bad input.')`  |
+
+> **Why?** Specific exceptions make it easier to identify the error type, handle it precisely, and keep error handling
+> organized.
+
+### Catch specific exceptions
+
+Always catch the most specific exception type available. Never catch base `Exception` or `Throwable` classes.
+
+<table>
+    <thead>
+        <tr>
+            <th>:x: Wrong</th>
+            <th>:white_check_mark: Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+try {
+    $this->someDeepMethod();
+} catch (Exception) {
+    return null;
+}
+```
+
+</td>
+<td>
+
+```php
+try {
+    $this->someDeepMethod();
+} catch (EntityNotFoundException) {
+    return null;
+} catch (UnknownProductTypeException $exception) {
+    $this->productLogger->error($exception->getMessage());
+
+    return null;
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+**Exception:** only catch the base `Exception` class when it comes from vendor code.
+
+> **Why?** Catching specific exceptions makes it clear what error is expected and where it comes from.
+
+### Extract try catch blocks
+
+Extract the bodies of the `try` and `catch` blocks out into functions of their own. Try/catch blocks confuse the
+structure of the code and mix error processing with normal processing.
+
+<table>
+    <thead>
+        <tr>
+            <th>:x: Wrong</th>
+            <th>:white_check_mark: Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+try {
+    // a lot of code
+    // ...
+    // ...
+} catch (Exception) {
+    // a lot of code
+    // ...
+    // ...
+}
+```
+
+</td>
+<td>
+
+```php
+try {
+    $this->someDeepMethod();
+} catch (UnknownProductTypeException $exception) {
+    $this->handleError($exception);
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** To provide a nice separation that makes the code easier to understand and modify.
 
 ## Comments
 
