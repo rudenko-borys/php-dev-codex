@@ -15,7 +15,7 @@
     * [Enable strict typing](#enable-strict-typing)
     * [Use strict comparison operators](#use-strict-comparison-operators)
     * [Comparison order](#comparison-order)
-    * [Comparing to boolean](#comparing-to-boolean)
+    * [Compare booleans directly](#compare-booleans-directly)
     * [Check things explicitly](#check-things-explicitly)
     * [Prefer match expressions](#prefer-match-expressions)
     * [Add trailing comma](#add-trailing-comma)
@@ -23,9 +23,9 @@
     * [Avoid unnecessary variables](#avoid-unnecessary-variables)
     * [Avoid unnecessary nesting](#avoid-unnecessary-nesting)
     * [Keep if statements simple](#keep-if-statements-simple)
-    * [Double quotes](#double-quotes)
-    * [String concatenation](#string-concatenation)
-    * [Method visibility](#method-visibility)
+    * [Use quotes properly](#use-quotes-properly)
+    * [Prefer sprintf for string concatenation](#prefer-sprintf-for-string-concatenation)
+    * [Control scope via visibility](#control-scope-via-visibility)
     * [Write small and understandable methods](#write-small-and-understandable-methods)
     * [Subtyping exceptions](#subtyping-exceptions)
     * [Catching exceptions](#catching-exceptions)
@@ -572,51 +572,53 @@ return $result;
 
 > **Why?** Simpler control flow is easier to read, test, and maintain.
 
-### Double quotes
+### Use quotes properly
 
-Don't use double quotes in simple strings.
+Use single quotes for strings by default. Use double quotes only when the string contains single quotes or requires
+escape characters such as `\n`. Never embed variables directly in strings - use `sprintf` instead.
 
-**Exception:**
+| :x: Wrong:                  | :white_check_mark: Right:     |
+|-----------------------------|-------------------------------|
+| `"Hello, World!"`           | `'Hello, World!'`             |
+| `'It\'s a beautiful day'`   | `"It's a beautiful day"`      |
+| `'First line\nSecond line'` | `"First line\nSecond line"`   |
+| `"Hello $name!"`            | `sprintf('Hello %s!', $name)` |
 
-- Single quote is used repeatedly inside the string
-- Some special symbols are used, like `"\n"`
+> **Why?** To keep quotes usage consistent. Single quotes signal that the string is plain text - no variables, no
+> escape sequences - making it faster to read and safer to edit.
 
-Don't use auto variable includes in double quotes (`"Hello $name!"` or `"Hello {$object->name}!"`).
+### Prefer sprintf for string concatenation
 
-> **Why?** To keep quotes usage consistent.
-
-### String concatenation
-
-Use `sprintf` function to concatenate strings.
+Use formatted templates (`sprintf`) to ensure that data injection is explicit and easy to trace during debugging.
 
 :x: Wrong:
 
 ```php
-$url = '/v1/template-family/' . $template->getTemplateFamily()->getId() . '/ingredient?' . http_build_query($queryParams);
+$url = '/v1/templates/' . $template->getTemplateFamily()->getId() . '/ingredients?' . http_build_query($queryParams);
 ```
 
 :white_check_mark: Right:
 
 ```php
 $url = sprintf(
-    '/v1/template-family/%s/ingredient?%s',
+    '/v1/templates/%s/ingredients?%s',
     $template->getTemplateFamily()->getId(),
     http_build_query($queryParams),
 );
 ```
 
-> **Why?** It improves the readability of the code.
+> **Why?** To separate the string template from its values, making long strings easier to read.
 
-### Method visibility
+### Control scope via visibility
 
-Prefer `private` over `protected` over `public` as it constrains the scope.
+Adhere to the principle of least privilege by applying the most restrictive access modifier to all class members.
 
-Use `protected` when intend some property or method to be overwritten if necessary in extending classes.
+- Use `private` for all internal implementation details.
+- Use `protected` only when a member is intended to be accessible by, or overridable in, subclasses.
+- Use `public` exclusively for members called from outside the class.
 
-Use `public` visibility only when method is called from outside of class.
-
-> **Why?** It's easier to refactor, find usages, plan possible changes in code. Also, IDE can warn about unused methods
-> or properties.
+> **Why?** Restrictive visibility limits the scope of changes and allows the IDE to detect unused methods and
+> properties.
 
 ### Write small and understandable methods
 
@@ -627,6 +629,8 @@ To prevent "God Methods", maintain a maximum threshold of `50` lines per functio
 
 **Exception:** in cases of high-density declarative configuration (such as schema definitions or form layouts), where
 line count increases due to structural complexity rather than procedural logic.
+
+> **Why?** Small, well-named methods are easier to read, test, and reuse.
 
 ### Subtyping exceptions
 
