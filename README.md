@@ -27,16 +27,17 @@
     * [Prefer sprintf for string concatenation](#prefer-sprintf-for-string-concatenation)
     * [Control scope via visibility](#control-scope-via-visibility)
     * [Write small and understandable methods](#write-small-and-understandable-methods)
-    * [Subtyping exceptions](#subtyping-exceptions)
-    * [Catching exceptions](#catching-exceptions)
+    * [Throw specific exceptions](#throw-specific-exceptions)
+    * [Catch specific exceptions](#catch-specific-exceptions)
     * [Extract try catch blocks](#extract-try-catch-blocks)
     * [Use immutable dates](#use-immutable-dates)
-    * [Readonly modifier](#readonly-modifier)
-    * [Reduce function arguments](#reduce-function-arguments)
-    * [Redundant PhpDoc](#redundant-phpdoc)
-    * [PhpDoc on arrays](#phpdoc-on-arrays)
-    * [Comment styles](#comment-styles)
-    * [Lazy comments](#lazy-comments)
+    * [Use readonly classes and properties](#use-readonly-classes-and-properties)
+    * [Reduce function parameters](#reduce-function-parameters)
+- [Comments](#comments)
+    * [Eliminate redundant PHPDoc](#eliminate-redundant-phpdoc)
+    * [Document array element types with PHPDoc](#document-array-element-types-with-phpdoc)
+    * [Follow commenting standards](#follow-commenting-standards)
+    * [Refactor instead of explaining](#refactor-instead-of-explaining)
 - [Naming conventions](#naming-conventions)
     * [Full names](#full-names)
     * [Class naming](#class-naming)
@@ -632,63 +633,25 @@ line count increases due to structural complexity rather than procedural logic.
 
 > **Why?** Small, well-named methods are easier to read, test, and reuse.
 
-### Subtyping exceptions
+### Throw specific exceptions
 
-You should never throw the `Exception` class directly. Instead, you must create custom exception extended from the SPL
-library exception.
+Never throw the base `Exception` class.
 
-<table>
-    <thead>
-        <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td>
+- For domain logic: Create custom exceptions that extend the appropriate SPL exception. They may remain empty; their
+value lies in their type.
+- For standard errors: Utilize existing SPL exceptions for common error states.
 
-```php
-public function checkToken(string $token): string
-{
-    if ($token === 'not valid token') {
-        throw new Exception('Invalid token.');
-    }
+| :x: Wrong:                               | :white_check_mark: Right:                           |
+|------------------------------------------|-----------------------------------------------------|
+| `throw new Exception('Invalid token.')`  | `throw new InvalidTokenException('Invalid token.')` |
+| `throw new Exception('Bad input.')`      | `throw new InvalidArgumentException('Bad input.')`  |
 
-    return $token;
-}
-```
+> **Why?** Specific exceptions make it easier to identify the error type, handle it precisely, and keep error handling
+> organized.
 
-</td>
-<td>
+### Catch specific exceptions
 
-```php
-public function checkToken(string $token): string
-{
-    if ($token === 'not valid token') {
-        throw new InvalidTokenException('Invalid token.');
-    }
-
-    return $token;
-}
-```
-
-</td>
-        </tr>
-    </tbody>
-</table>
-
-Custom exception does not need to contain any code. It just needs to extend the SPL exception class. For common cases
-(e.g. wrong type of variable in validator) you can just use an exception from the SPL library.
-
-> **Why?** This greatly simplifies debugging and troubleshooting because you can easily determine the type of error
-> that occurred. Additionally, creating custom exception classes also helps keep code organised and maintainable.
-
-### Catching exceptions
-
-Never catch base `Exception` class except where it’s thrown from vendor code.
-
-In any case, never catch exception if there are few throwing places possible and only one is expected.
+Always catch the most specific exception type available. Never catch base `Exception` or `Throwable` classes.
 
 <table>
     <thead>
@@ -729,7 +692,9 @@ try {
     </tbody>
 </table>
 
-> **Why?** It is easier to find an issue if there is only one place where it happens.
+**Exception:** only catch the base `Exception` class when it comes from vendor code.
+
+> **Why?** Catching specific exceptions makes it clear what error is expected and where it comes from.
 
 ### Extract try catch blocks
 
@@ -779,14 +744,46 @@ try {
 
 ### Use immutable dates
 
-Instead of manually applying defensive techniques to prevent unexpected mutation when passing around
-date/time objects, use `DateTimeImmutable` that encapsulates those techniques, making your code more reliable.
+All date and time operations must utilize `DateTimeImmutable` instead of `DateTime`.
 
-> **Why?** To avoid object cloning and bugs.
+<table>
+    <thead>
+        <tr>
+            <th>:x: Wrong</th>
+            <th>:white_check_mark: Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
 
-### Readonly modifier
+```php
+$startedAt = new DateTime();
 
-Prefer using readonly classes and properties. The only exception is a class that needs internal caching via property.
+$finishedAt = clone $startedAt;
+$finishedAt->modify('+1 day');
+```
+
+</td>
+<td>
+
+```php
+$startedAt = new DateTimeImmutable();
+
+$finishedAt = $startedAt->modify('+1 day');
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** To ensure that the date remains constant across different layers of the application and to eliminate the
+> need for "defensive cloning".
+
+### Use readonly classes and properties
+
+Prefer using `readonly` classes and properties.
 
 <table>
     <thead>
@@ -847,13 +844,15 @@ readonly class UserModel
     </tbody>
 </table>
 
-> **Why?** Readonly class prevents the creation of dynamic properties. Readonly property prevents modification of the
-> property after initialization.
+**Exception:** when a class requires internal state mutation (e.g., for memoization, caching, or tracking internal
+lifecycle changes).
 
-### Reduce function arguments
+> **Why?** Readonly modifier prevents accidental mutation after initialization and disallows dynamic property creation.
 
-The maximum number of function parameters should be three. Every argument you add to a function signature makes that
-function harder to understand. If more than three arguments are needed - put them into an object.
+### Reduce function parameters
+
+The maximum number of function parameters should be three. Every parameter you add to a function signature makes that
+function harder to understand. If more parameters are needed, group them into a dedicated object.
 
 <table>
     <thead>
@@ -872,7 +871,7 @@ function createUser(
     string $email,
     int $age,
     string $country,
-) {
+): User {
     // ...
 }
 ```
@@ -881,7 +880,7 @@ function createUser(
 <td>
 
 ```php
-function createUser(CreateUserModel $model) {
+function createUser(CreateUserModel $model): User {
     // ...
 }
 ```
@@ -893,17 +892,54 @@ function createUser(CreateUserModel $model) {
 
 > **Why?** To make code more maintainable, scalable, and easier to read.
 
-### Redundant PhpDoc
+## Comments
 
-Don't add PhpDoc to fully strictly typed methods.
+### Eliminate redundant PHPDoc
 
-> **Why?** Any comment needs to be maintained - if you change parameters or return type, then you must also update
-> PhpDoc. If PhpDoc does not add any additional information, it merely duplicates the information already provided.
+Don't add PHPDoc to methods that are already fully type-hinted.
 
-### PhpDoc on arrays
+<table>
+    <thead>
+        <tr>
+            <th>:x: Wrong</th>
+            <th>:white_check_mark: Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
 
-If an array (or Doctrine Collection) of strictly typed elements is used as an argument or return type,
-then PhpDoc must be added to describe the type of elements in the array. Example:
+```php
+/**
+ * @param string $email
+ *
+ * @return object
+ */
+function send(string $email): object {
+    // ...
+}
+```
+
+</td>
+<td>
+
+```php
+function send(string $email): object {
+    // ...
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** To reduce maintenance dept and cognitive load. If PHPDoc does not add any additional information, it merely
+> duplicates the information already provided.
+
+### Document array element types with PHPDoc
+
+Add PHPDoc to describe element types when using `arrays` or `Collections` as arguments or return types.
 
 ```php
 /**
@@ -912,32 +948,63 @@ then PhpDoc must be added to describe the type of elements in the array. Example
 public function getProducts(): Collection;
 ```
 
-> **Why?** Most IDEs, such as PhpStorm, can apply auto-completion or warn you of non-existing methods by reading this
-> information and inferring the types of variables, properties, and even method return values.
+> **Why?** IDEs use this information to provide auto-completion and type warnings.
 
-### Comment styles
+### Follow commenting standards
 
-Use multi-line `/** */` comments for method, property, and class annotations.
+Use the right comment syntax depending on what you are documenting.
 
-Use single-line `/** @var Class $object */` annotation for local variables. Try to avoid this if possible - usually
-PhpDoc is enough (sometimes it's missing, for example in vendor code).
+- Use multi-line `/** */` comments for method, property, and class annotations.
+- Use single-line `/** @var Class $object */` comments for local variables if type is missing in vendor code.
+- Use `//` for single line comments.
+- Don't use `/* */` or `#` comments at all.
+- Never leave commented-out code. If code is no longer needed, delete it. Use VCS to revert if needed.
 
-Use `//` for single line comments in the code.
+> **Why?** Consistent comment styles make code easier to read and process with tooling.
 
-Don't use `/* */` or `#` comments at all.
+### Refactor instead of explaining
 
-If you want to comment-out something - just delete it (and use VCS to revert if needed).
+Prefer code refactoring over lazy commenting to explain its behavior. Code that explains itself needs no comments.
 
-> **Why no multi-line comment?** Try to keep functions small and comment them in PhpDoc. If some things are to be
-> explained in function body, single line comments should be enough.
+<table>
+    <thead>
+        <tr>
+            <th>:x: Wrong</th>
+            <th>:white_check_mark: Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
 
-### Lazy comments
+```php
+// Check if the user is a product manager
+if (
+    $user->getRole() === ROLE::MANAGER
+    && $user->hasSpecialAccess()
+    && $user->isAllowedToManageProducts()
+    && $user->isActive()
+) {
+    // ...
+}
+```
 
-Prefer code refactoring over lazy commenting to explain its behavior. In most cases, the code should be clear enough
-not to need comments at all.
+</td>
+<td>
 
-> **Why?** They are technical debt - if you cannot keep it updated, it gets stale real quick. When you can't trust some
-> comments, you don't know which ones you can really trust.
+```php
+if ($this->isProductManager($user)) {
+    // ...
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** Comments that explain "how" code works are technical debt. They create a maintenance burden where every
+> future change to the logic requires a corresponding update to the comment to prevent misleading information.
 
 ---
 
