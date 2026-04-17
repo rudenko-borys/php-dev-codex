@@ -40,7 +40,7 @@
     * [Follow commenting standards](#follow-commenting-standards)
     * [Refactor instead of explaining](#refactor-instead-of-explaining)
 - [Naming conventions](#naming-conventions)
-    * [Full names](#full-names)
+    * [Favor full names](#favor-full-names)
     * [Class naming](#class-naming)
     * [Interface naming](#interface-naming)
     * [Property naming](#property-naming)
@@ -91,7 +91,7 @@ namespace App\Entity;
 
 class User
 {
-    //...
+    // ...
 }
 ```
 
@@ -107,7 +107,7 @@ namespace App\Entity;
 
 class User
 {
-    //...
+    // ...
 }
 ```
 
@@ -233,7 +233,7 @@ $message = match ($statusCode) {
     200, 300 => null,
     400 => $this->getValidationMessage(),
     500 => 'server error',
-    default => 'unknown status code',
+    default => 'unknown status code'
 };
 ```
 
@@ -268,6 +268,8 @@ public function create(
         'name' => $model->name,
         'type' => $model->type
     ];
+
+    // ...
 }
 ```
 
@@ -283,6 +285,8 @@ public function create(
         'name' => $model->name,
         'type' => $model->type,
     ];
+
+    // ...
 }
 ```
 
@@ -414,7 +418,7 @@ function getValue(): int
     </tbody>
 </table>
 
-**Exception:** use variables when they improve readability or help explain a complex condition. For example:
+**Exception:** use variables when they improve readability or help explain a complex condition.
 
 ```php
 function canModify(Product $product): bool
@@ -1013,11 +1017,24 @@ if ($this->isProductManager($user)) {
 
 ## Naming conventions
 
-### Full names
+### Favor full names
 
-Use full names, not abbreviations: `$entityManager` instead of `$em`, `$exception` instead of `$e`, etc.
+Always use full, descriptive names instead of abbreviations.
 
-> **Why?** It improves the readability of the code.
+| :x: Wrong:             | :white_check_mark: Right:    |
+|------------------------|------------------------------|
+| `$em`                  | `$entityManager`             |
+| `$e`                   | `$exception`                 |
+| `function delMsg($id)` | `function delayMessage($id)` |
+
+**Exception:** established acronyms like `GPS`, `SQL`, `URL`, etc.
+
+> **Why?** To reduce cognitive load and prevent ambiguity. Explicit names ensure that the intent of the code is clear
+> to future maintainers.
+
+### Name constants and enums consistently 
+
+Constant and enum case names must be uppercase. Start the name with the shared prefix, followed by the specific part. :x: Wrong: :white_check_mark: Right: SUCCEEDED_STATUS STATUS_SUCCEEDED FAILED_STATUS STATUS_FAILED Why? Shared prefixes group related constants visually, making them easier to scan and auto-complete
 
 ### Class naming
 
