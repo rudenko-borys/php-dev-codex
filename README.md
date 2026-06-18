@@ -172,7 +172,7 @@ Don't perform identity comparisons against `true` or `false` when a variable is 
 **Exception:** when a variable is not strictly `boolean`.
 
 ```php
-return strpos('needle', 'haystack') === false;
+return strpos($haystack, $needle) === false;
 ```
 
 > **Why?** To reduce complexity.
@@ -246,7 +246,7 @@ switch ($statusCode) {
 ```php
 $message = match ($statusCode) {
     200, 300 => null,
-    400 => $this->getValidationMessage(),
+    400 => $this->getErrorMessage(),
     500 => 'server error',
     default => 'unknown status code'
 };
@@ -444,8 +444,8 @@ function canModify(Product $product): bool
 {
     $rightsGranted = $this->isAdmin() || $this->isOwner($product);
     $productEditable = $this->isNew($product) && !$this->isLocked($product);
-    
-    return $rightsGranted && $profileEditable;
+
+    return $rightsGranted && $productEditable;
 }
 ```
 
@@ -917,6 +917,22 @@ $weightKg = $weightGrams / self::GRAMS_IN_KILOGRAM;
 
 </td>
         </tr>
+        <tr>
+<td>
+
+```php
+preg_match('/^\+?[1-9]\d{7,14}$/', $phone);
+```
+
+</td>
+<td>
+
+```php
+preg_match(self::E164_PHONE_PATTERN, $phone);
+```
+
+</td>
+        </tr>
     </tbody>
 </table>
 
@@ -1075,7 +1091,7 @@ function send(string $email): object {
     </tbody>
 </table>
 
-> **Why?** To reduce maintenance dept and cognitive load. If PHPDoc does not add any additional information, it merely
+> **Why?** To reduce maintenance debt and cognitive load. If PHPDoc does not add any additional information, it merely
 > duplicates the information already provided.
 
 ### Document array element types with PHPDoc
@@ -1121,7 +1137,7 @@ Prefer code refactoring over lazy commenting to explain its behavior. Code that 
 ```php
 // Check if the user is a product manager
 if (
-    $user->getRole() === ROLE::MANAGER
+    $user->getRole() === Role::MANAGER
     && $user->hasSpecialAccess()
     && $user->isAllowedToManageProducts()
     && $user->isActive()
@@ -1258,7 +1274,7 @@ class Entity
 ```php
 class Entity
 {
-    private bool $valid;  
+    private bool $valid;
 
     private bool $checkNeeded;
 }
@@ -1525,7 +1541,7 @@ responsible for all the logic related to the authentication functionality.
 
 ### Layered architecture
 
-We follow a Domain Driven Development (DDD) approach with five layers:
+We follow a Domain-Driven Design (DDD) approach with five layers:
 
 - **Application** - holds business and complex logic flows. It is a high-level layer called only from the
   `Presentation` layer, and it may call services from the `Domain` or `Infrastructure` layer. Classes usually end in
@@ -1813,10 +1829,10 @@ them into one composite service. For example, the composite `UserService` would 
 <td>
 
 ```php
-class UserService
+readonly class UserService
 {
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -1839,22 +1855,22 @@ class UserService
 <td>
 
 ```php
-class UserService
+readonly class UserService
 {
     public function __construct(
-        private readonly UserManager $userManager,
-        private readonly UserSynchronizer $userSynchronizer,
+        private UserManager $manager,
+        private UserSynchronizer $synchronizer,
     ) {
     }
 
     public function create(UserCreateModel $model): User
     {
-        return $this->userManager->create($model);
+        return $this->manager->create($model);
     }
 
     public function synchronize(User $user): void
     {
-        $this->userSynchronizer->synchronize($user);
+        $this->synchronizer->synchronize($user);
     }
 }
 ```
@@ -1897,10 +1913,10 @@ authorization logic and vice versa. Otherwise, you will get one interconnected s
 <td>
 
 ```php
-class UserManager
+readonly class UserManager
 {
     public function __construct(
-        private readonly SecurityService $securityService,
+        private SecurityService $securityService,
     ) {
     }
 
@@ -1919,10 +1935,10 @@ class UserManager
 <td>
 
 ```php
-class UserManager
+readonly class UserManager
 {
     public function __construct(
-        private readonly EventDispatcherInterface $eventDispatcher,
+        private EventDispatcherInterface $eventDispatcher,
     ) {
     }
 

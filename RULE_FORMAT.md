@@ -82,7 +82,7 @@ Pick the variant that fits the content:
 
 <One- to three-sentence prescriptive description.>
 
-| ❌ Wrong:      | ✅ Right: |
+| ❌ Wrong:        | ✅ Right:                  |
 |-----------------|---------------------------|
 | `bad_example()` | `good_example()`          |
 
