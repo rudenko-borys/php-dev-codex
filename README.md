@@ -386,7 +386,9 @@ function find(int $needle, array $haystack): bool
 
 function getValue(): int
 {
-    $value = get();
+    // ...
+
+    $value = $this->get();
 
     return $value;
 }
@@ -409,7 +411,9 @@ function find(int $needle, array $haystack): bool
 
 function getValue(): int
 {
-    return get();
+    // ...
+
+    return $this->get();
 }
 ```
 
