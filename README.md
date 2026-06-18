@@ -1,4 +1,4 @@
-# PHP developer codex :notebook_with_decorative_cover:
+# PHP developer codex 📔
 
 [![PHP](https://img.shields.io/badge/v8.3-blue?logo=php&labelColor=grey&logoColor=white)](https://www.php.net)
 [![Symfony](https://img.shields.io/badge/v6.4-blue?logo=symfony&labelColor=grey)](https://symfony.com/doc/6.4/index.html)
@@ -30,6 +30,9 @@
     * [Use immutable dates](#use-immutable-dates)
     * [Use readonly classes and properties](#use-readonly-classes-and-properties)
     * [Reduce function parameters](#reduce-function-parameters)
+    * [Don't reuse variables for different states](#dont-reuse-variables-for-different-states)
+    * [Use named arguments](#use-named-arguments)
+    * [Name numbers and complex regexes](#name-numbers-and-complex-regexes)
 - [Exceptions](#exceptions)
     * [Throw specific exceptions](#throw-specific-exceptions)
     * [Catch specific exceptions](#catch-specific-exceptions)
@@ -41,15 +44,27 @@
     * [Refactor instead of explaining](#refactor-instead-of-explaining)
 - [Naming conventions](#naming-conventions)
     * [Favor full names](#favor-full-names)
+    * [Avoid uppercased abbreviations](#avoid-uppercased-abbreviations)
+    * [Name constants and enums consistently](#name-constants-and-enums-consistently)
     * [Class naming](#class-naming)
     * [Interface naming](#interface-naming)
+    * [Abstract class naming](#abstract-class-naming)
+    * [Trait naming](#trait-naming)
+    * [Enum naming](#enum-naming)
     * [Property naming](#property-naming)
+    * [Context duplication in naming](#context-duplication-in-naming)
+    * [Avoid double plural constructions](#avoid-double-plural-constructions)
     * [Method naming](#method-naming)
+    * [Repository method naming](#repository-method-naming)
+    * [Filler and provider method naming](#filler-and-provider-method-naming)
     * [Event naming](#event-naming)
     * [Event class naming](#event-class-naming)
     * [Event subscriber naming](#event-subscriber-naming)
     * [Route path naming](#route-path-naming)
+    * [HTTP methods for actions](#http-methods-for-actions)
 - [ADRs](#adrs)
+    * [Layered architecture](#layered-architecture)
+    * [Directory tree](#directory-tree)
     * [Model without defaults](#model-without-defaults)
     * [Model without logic](#model-without-logic)
     * [Fetch-only repository](#fetch-only-repository)
@@ -76,8 +91,8 @@ Every PHP script must include the `declare(strict_types=1);` directive as the ve
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -127,7 +142,7 @@ with the strict operator.
 For `in_array()`, always set the third parameter (`$strict`) to `true` to ensure elements are checked for both value
 and type.
 
-| :x: Wrong:                     | :white_check_mark: Right:                    |
+| ❌ Wrong:                       | ✅ Right:                                     |
 |--------------------------------|----------------------------------------------|
 | `$value == null`               | `$value === null`                            |
 | `in_array($needle, $haystack)` | `in_array($needle, $haystack, strict: true)` |
@@ -139,9 +154,9 @@ and type.
 
 Put static value (`true`, `false`, `null`, `enum`) in the right of comparison operator.
 
-| :x: Wrong:        | :white_check_mark: Right: |
-|-------------------|---------------------------|
-| `null === $value` | `$value === null`         |
+| ❌ Wrong:          | ✅ Right:          |
+|-------------------|-------------------|
+| `null === $value` | `$value === null` |
 
 > **Why?** Speak clearly to be understood correctly, you must. Yes, hmmm.
 
@@ -149,10 +164,10 @@ Put static value (`true`, `false`, `null`, `enum`) in the right of comparison op
 
 Don't perform identity comparisons against `true` or `false` when a variable is already of type `boolean`.
 
-| :x: Wrong:                 | :white_check_mark: Right: |
-|----------------------------|---------------------------|
-| `return $valid === true;`  | `return $valid;`          |
-| `return $valid !== false;` | `return !$valid;`         |
+| ❌ Wrong:                   | ✅ Right:          |
+|----------------------------|-------------------|
+| `return $valid === true;`  | `return $valid;`  |
+| `return $valid !== false;` | `return !$valid;` |
 
 **Exception:** when a variable is not strictly `boolean`.
 
@@ -167,11 +182,11 @@ return strpos('needle', 'haystack') === false;
 Use only functions and conditions that match the exact intent of the check. Avoid unrelated constructs, even if they
 produce the desired result with less code.
 
-| :x: Wrong:           | :white_check_mark: Right: |
-|----------------------|---------------------------|
-| `empty($value)`      | `isset($value)`           |
-| `!empty($array)`     | `$array !== []`           |
-| `strlen($value) > 0` | `$value !== ''`           |
+| ❌ Wrong:             | ✅ Right:        |
+|----------------------|-----------------|
+| `empty($value)`      | `isset($value)` |
+| `!empty($array)`     | `$array !== []` |
+| `strlen($value) > 0` | `$value !== ''` |
 
 Use all of the above even in cases where side effects are almost impossible.
 
@@ -187,8 +202,8 @@ value.
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -251,8 +266,8 @@ Always add a trailing comma in multiline arrays, objects, functions, etc.
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -305,8 +320,8 @@ statements before the condition is evaluated.
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -360,8 +375,8 @@ Avoid temporary variables when they don't clarify the code.
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -443,8 +458,8 @@ Avoid nested conditions when a single condition is enough.
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -488,8 +503,8 @@ Reduce `if` usage as much as possible.
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -587,7 +602,7 @@ return $result;
 Use single quotes for strings by default. Use double quotes only when the string contains single quotes or requires
 escape characters such as `\n`. Never embed variables directly in strings - use `sprintf` instead.
 
-| :x: Wrong:                  | :white_check_mark: Right:     |
+| ❌ Wrong:                    | ✅ Right:                      |
 |-----------------------------|-------------------------------|
 | `"Hello, World!"`           | `'Hello, World!'`             |
 | `'It\'s a beautiful day'`   | `"It's a beautiful day"`      |
@@ -601,13 +616,13 @@ escape characters such as `\n`. Never embed variables directly in strings - use 
 
 Use formatted templates (`sprintf`) to ensure that data injection is explicit and easy to trace during debugging.
 
-:x: Wrong:
+❌ Wrong:
 
 ```php
 $url = '/v1/templates/' . $template->getTemplateFamily()->getId() . '/ingredients?' . http_build_query($queryParams);
 ```
 
-:white_check_mark: Right:
+✅ Right:
 
 ```php
 $url = sprintf(
@@ -649,8 +664,8 @@ All date and time operations must utilize `DateTimeImmutable` instead of `DateTi
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -688,8 +703,8 @@ Prefer using `readonly` classes and properties.
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -757,8 +772,8 @@ function harder to understand. If more parameters are needed, group them into a 
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -792,6 +807,121 @@ function createUser(CreateUserModel $model): User {
 
 > **Why?** To make code more maintainable, scalable, and easier to read.
 
+### Don't reuse variables for different states
+
+Don't assign different states or representations of a value to the same variable. Introduce a new, descriptive variable
+for each state.
+
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+$name = 'John';
+$name = sprintf('%s %s', $name, $lastName);
+$name = preg_replace($pattern, '', $name);
+```
+
+</td>
+<td>
+
+```php
+$name = 'John';
+$fullName = sprintf('%s %s', $name, $lastName);
+$filteredFullName = preg_replace($pattern, '', $fullName);
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** Reusing a variable for different states hides the data flow and makes the code harder to follow and debug.
+
+### Use named arguments
+
+Use named arguments for:
+
+1. Multiline method calls.
+2. Any boolean argument.
+
+You can skip named arguments when the method can be called on a single line and has no boolean argument.
+
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+$this->createUser($name, $email, true);
+```
+
+</td>
+<td>
+
+```php
+$this->createUser(
+    name: $name,
+    email: $email,
+    active: true,
+);
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** Named arguments document the meaning of each value at the call site, especially for booleans and long
+> argument lists.
+
+### Name numbers and complex regexes
+
+Extract magic numbers used in formulas into named constants. Apply the same approach to complex regular expressions,
+unless the variable name already explains the regex purpose.
+
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+$weightKg = $weightGrams / 1000;
+```
+
+</td>
+<td>
+
+```php
+$weightKg = $weightGrams / self::GRAMS_IN_KILOGRAM;
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** Named constants make formulas self-explanatory and prevent the meaning of a value from being lost.
+
 ## Exceptions
 
 ### Throw specific exceptions
@@ -802,10 +932,10 @@ Never throw the base `Exception` class.
   value lies in their type.
 - For standard errors: Utilize existing SPL exceptions for common error states.
 
-| :x: Wrong:                               | :white_check_mark: Right:                           |
-|------------------------------------------|-----------------------------------------------------|
-| `throw new Exception('Invalid token.')`  | `throw new InvalidTokenException('Invalid token.')` |
-| `throw new Exception('Bad input.')`      | `throw new InvalidArgumentException('Bad input.')`  |
+| ❌ Wrong:                                | ✅ Right:                                            |
+|-----------------------------------------|-----------------------------------------------------|
+| `throw new Exception('Invalid token.')` | `throw new InvalidTokenException('Invalid token.')` |
+| `throw new Exception('Bad input.')`     | `throw new InvalidArgumentException('Bad input.')`  |
 
 > **Why?** Specific exceptions make it easier to identify the error type, handle it precisely, and keep error handling
 > organized.
@@ -817,8 +947,8 @@ Always catch the most specific exception type available. Never catch base `Excep
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -865,8 +995,8 @@ structure of the code and mix error processing with normal processing.
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -912,8 +1042,8 @@ Don't add PHPDoc to methods that are already fully type-hinted.
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -980,8 +1110,8 @@ Prefer code refactoring over lazy commenting to explain its behavior. Code that 
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -1025,7 +1155,7 @@ if ($this->isProductManager($user)) {
 
 Always use full, descriptive names instead of abbreviations.
 
-| :x: Wrong:             | :white_check_mark: Right:    |
+| ❌ Wrong:               | ✅ Right:                     |
 |------------------------|------------------------------|
 | `$em`                  | `$entityManager`             |
 | `$e`                   | `$exception`                 |
@@ -1036,9 +1166,30 @@ Always use full, descriptive names instead of abbreviations.
 > **Why?** To reduce cognitive load and prevent ambiguity. Explicit names ensure that the intent of the code is clear
 > to future maintainers.
 
-### Name constants and enums consistently 
+### Avoid uppercased abbreviations
 
-Constant and enum case names must be uppercase. Start the name with the shared prefix, followed by the specific part. :x: Wrong: :white_check_mark: Right: SUCCEEDED_STATUS STATUS_SUCCEEDED FAILED_STATUS STATUS_FAILED Why? Shared prefixes group related constants visually, making them easier to scan and auto-complete
+Don't fully uppercase abbreviations in class, method, property, or variable names. Treat the abbreviation as a regular
+word and only capitalize its first letter.
+
+| ❌ Wrong:          | ✅ Right:          |
+|-------------------|-------------------|
+| `getGPSSQL()`     | `getGpsSql()`     |
+| `$userID`         | `$userId`         |
+| `class APIClient` | `class ApiClient` |
+
+> **Why?** Consistent casing keeps multi-word names readable and avoids ambiguous boundaries between stacked
+> abbreviations.
+
+### Name constants and enums consistently
+
+Constant and enum case names must be uppercase. Start the name with the shared prefix, followed by the specific part.
+
+| ❌ Wrong:           | ✅ Right:           |
+|--------------------|--------------------|
+| `SUCCEEDED_STATUS` | `STATUS_SUCCEEDED` |
+| `FAILED_STATUS`    | `STATUS_FAILED`    |
+
+> **Why?** Shared prefixes group related constants visually, making them easier to scan and auto-complete.
 
 ### Class naming
 
@@ -1049,12 +1200,33 @@ Use `er` suffix for services to represent the job of that service, for example:
 
 **Exception:** main service class.
 
+> **Why?** A noun names the thing, and the `er` suffix communicates the job a service performs at a glance.
+
 ### Interface naming
 
 Add suffix `Interface` to interfaces, even if interface name would be adjective.
 
 > **Why?** If there is a base class that implements the interface, then there will be a name conflict.
 > For example, `ContainerAware` and `ContainerAwareInterface`.
+
+### Abstract class naming
+
+Add the prefix `Abstract` to abstract classes.
+
+> **Why?** If there is a base class that extends an abstract class, then there will be a name conflict.
+> For example, `Controller` and `AbstractController`.
+
+### Trait naming
+
+Add the suffix `Trait` to traits, even if the trait name would be an adjective.
+
+> **Why?** To make it clear from the name that it is a trait.
+
+### Enum naming
+
+Add the suffix `Enum` to enums.
+
+> **Why?** To make it clear from the name that it is an enum.
 
 ### Property naming
 
@@ -1063,8 +1235,8 @@ Use nouns or adjectives for property names, not verbs or questions.
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -1097,11 +1269,76 @@ class Entity
     </tbody>
 </table>
 
+> **Why?** Properties hold state, not actions. Nouns and adjectives describe that state, while verbs and questions
+> belong to methods.
+
+### Context duplication in naming
+
+Don't repeat the class context in property, folder, or method names. Keep full names for classes, but drop the
+redundant context from members. This avoids unnecessary line breaks and improves readability.
+
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+readonly class FileCategoryService
+{
+    public function __construct(
+        private FileCategoryManagerInterface $fileCategoryManager,
+        private FileCategoryRepositoryInterface $fileCategoryRepository,
+    ) {
+    }
+}
+```
+
+</td>
+<td>
+
+```php
+readonly class FileCategoryService
+{
+    public function __construct(
+        private FileCategoryManagerInterface $manager,
+        private FileCategoryRepositoryInterface $repository,
+    ) {
+    }
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+The same applies to methods. For example, in `LoadManagerInterface` use `get()`, `create(LoadModel $model)` and
+`update(LoadModel $model)` instead of `getLoad()`, `createNewLoad()` and `updateLoadByModel()`.
+
+> **Why?** The class already provides the context, so repeating it in members only adds noise and unnecessary line
+> breaks.
+
+### Avoid double plural constructions
+
+Don't pluralize both parts of a compound name. Pluralize only the trailing noun.
+
+| ❌ Wrong:        | ✅ Right:       |
+|-----------------|----------------|
+| `$driversLoads` | `$driverLoads` |
+
+> **Why?** Pluralizing only the trailing noun reads as natural English and keeps the meaning unambiguous.
+
 ### Method naming
 
 Use verbs for methods that perform action and/or return something, questions only for methods which return boolean.
 
-Questions must start with `has`, `is`, `can` - these cannot make any side effect and always return boolean.
+Questions must start with `has`, `is`, `can`, `must` - these cannot make any side effect and always return boolean.
 
 For entities use `is` or `are` for boolean getters, `get` for other getters, `set` for setters, `add` for adders
 and `remove` for removers.
@@ -1111,8 +1348,8 @@ Make proper english phrase out of method names, it's more important than calling
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -1153,6 +1390,28 @@ interface EntityInterface
     </tbody>
 </table>
 
+> **Why?** Verb and question prefixes make a method's intent and return type predictable, and signal whether it has
+> side effects.
+
+### Repository method naming
+
+Public repository methods must start with `find`, `count`, or `sum` only. A method that returns a single entity must
+be named `findOne`.
+
+| ❌ Wrong:              | ✅ Right:           |
+|-----------------------|--------------------|
+| `getProduct(int $id)` | `findOne(int $id)` |
+| `getActiveProducts()` | `findActive()`     |
+| `getTotalAmount()`    | `sumAmount()`      |
+
+> **Why?** A consistent verb set makes it clear that the repository only fetches data and returns nothing else.
+
+### Filler and provider method naming
+
+Public filler methods must start with `fill` only. Public provider methods must start with `provide` only.
+
+> **Why?** The prefix communicates the single responsibility of the class directly from the method name.
+
 ### Event naming
 
 Name events in past-tense verbs, prefixed by resource for which some action happened. Separate the resource and action
@@ -1161,8 +1420,8 @@ with a dot.
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -1220,7 +1479,7 @@ Example: `ResetPasswordSubscriber`.
 6. Don't use CRUD function names
 7. Use versions
 
-| :x: Wrong:              | :white_check_mark: Right:  |
+| ❌ Wrong:                | ✅ Right:                   |
 |-------------------------|----------------------------|
 | `/store/GetProducts/`   | `/v1/store/product`        |
 | `/store/products.json`  | `/v1/store/product`        |
@@ -1233,6 +1492,27 @@ Example: `ResetPasswordSubscriber`.
 > File extensions are unnecessary and add length and complexity (**5**). By versioning your APIs, you can provide an
 > upgrade path without making any fundamental changes to existing APIs (**7**).
 
+### HTTP methods for actions
+
+Use the correct HTTP method for each action so that clients and servers stay interoperable.
+
+| Method   | Action                                                            |
+|----------|-------------------------------------------------------------------|
+| `GET`    | Retrieves a resource or collection of resources.                  |
+| `POST`   | Creates a new resource or submits data for processing.            |
+| `PUT`    | Updates an existing resource fully by replacing it with new data. |
+| `PATCH`  | Partially updates a resource with specific changes.               |
+| `DELETE` | Removes a resource.                                               |
+
+Return accurate HTTP status codes so clients can handle errors and success cases gracefully:
+
+- **2xx – Success:** the request was successfully received, understood, and accepted.
+- **3xx – Redirection:** the request must perform further actions to complete.
+- **4xx – Client Error:** the request has bad syntax or cannot be fulfilled.
+- **5xx – Server Error:** the server failed to fulfill a seemingly valid request.
+
+> **Why?** Standard methods and status codes give a uniform interface and consistent, predictable feedback to clients.
+
 ## ADRs
 
 It stands for **Architectural Decision Record**, but in this case it's just **Any Decision Record** to make it simple.
@@ -1243,6 +1523,149 @@ Services are responsible for the business logic of one specific entity or discre
 For example, `UserService` is responsible for all the logic related to the user entity, while `SecurityService` is
 responsible for all the logic related to the authentication functionality.
 
+### Layered architecture
+
+We follow a Domain Driven Development (DDD) approach with five layers:
+
+- **Application** - holds business and complex logic flows. It is a high-level layer called only from the
+  `Presentation` layer, and it may call services from the `Domain` or `Infrastructure` layer. Classes usually end in
+  `Service`/`Puller`/`Decider`/`Pusher`/`Handler`/`Processor`/`<anything>er`. Their goal is to trigger a chain of
+  business-connected actions and act as an entrypoint for the `Presentation` layer.
+- **Domain** - holds `Models`/`Enums`/`Exceptions`/`Interfaces`. These classes know only the business aspects of the
+  domain, nothing about the framework or specific tools. Services here act as an API that delegates actions to the
+  `Infrastructure` layer. This layer can be called only from `Application` or `Presentation`, and may call only the
+  `Infrastructure` layer.
+- **Infrastructure** - holds the implementation of everything that requires a specific tool, and implements the
+  interfaces provided by the `Domain` layer. A service responsible for CRUD actions on a domain entity must always be
+  called `Manager` and implements `get`/`create`/`update`/`delete`.
+- **Framework** - holds framework-specific logic like `CompilerPass`/`Extensions`/`Bundles`/etc.
+- **Presentation** - holds the entrypoints for accessing the application from the outside, split into sublayers:
+    - **Cli** - `Commands` and anything callable from the terminal.
+    - **Ui** - `Controllers`/`Ui Services`/`Content Preparators`/`Frontend Resources`/`Datatables`/`Forms`/`Validators`.
+    - **Api** - the API layer of the application.
+
+> **Why?** Clear layer boundaries keep business logic independent from frameworks and tools, which makes the code
+> easier to test, replace, and reason about.
+
+### Directory tree
+
+There are two structures depending on the project type.
+
+**1. Monolith (bundle-based).** A large monolith that may be split into microservices later treats each bundle as a
+domain:
+
+```
+📂 /ImportBundle
+├── 📂 /Application
+│   └── 📂 /Service
+│       └── 📄 ImportTemplateService.php
+├── 📂 /Domain
+│   ├── 📂 /Model
+│   │   └── 📄 ImportHistoryModel.php
+│   ├── 📂 /Enum
+│   │   └── 📄 ImportTypeEnum.php
+│   ├── 📂 /Exception
+│   │   └── 📄 ImportException.php
+│   ├── 📂 /Service
+│   │   └── 📄 ImportManagerInterface.php
+│   └── 📂 /Repository
+│       ├── 📄 ImportHistoryRepositoryInterface.php
+│       └── 📄 ImportTemplateRepositoryInterface.php
+├── 📂 /Infrastructure
+│   ├── 📂 /Doctrine
+│   │   ├── 📂 /Entity
+│   │   │   └── 📄 ImportTemplate.php
+│   │   ├── 📂 /Model
+│   │   │   └── 📄 ImportHistoryFillerModel.php
+│   │   ├── 📂 /Repository
+│   │   │   ├── 📄 ImportHistoryRepository.php
+│   │   │   └── 📄 ImportTemplateRepository.php
+│   │   └── 📂 /Service
+│   │       ├── 📄 ImportManager.php
+│   │       └── 📄 ImportHistoryFiller.php
+│   └── 📂 /Messenger
+│       └── 📂 /OpenSpout
+├── 📂 /Framework
+│   ├── 📂 /CompilerPass
+│   ├── 📂 /EventSubscriber
+│   ├── 📂 /Kernel
+│   └── 📄 ImportBundle.php
+└── 📂 /Presentation
+    ├── 📂 /Cli
+    │   └── 📂 /Command
+    ├── 📂 /Ui
+    │   ├── 📂 /Controller
+    │   ├── 📂 /Validator
+    │   ├── 📂 /Form
+    │   │   └── 📂 /DataTransformers
+    │   │       └── 📄 ImportTemplateType.php
+    │   ├── 📂 /Resources
+    │   │   ├── 📂 /assets
+    │   │   └── 📂 /views
+    │   ├── 📂 /Service
+    │   │   └── 📄 UiImportTemplatePreparator.php
+    │   └── 📂 /DataTable
+    │       └── 📄 ImportHistoryDataTable.php
+    └── 📂 /Api
+        └── 📂 /Controller
+```
+
+Classes shared between domains live in a `Platform` folder.
+
+**2. Microservice.** There are no bundles, so the four layers sit at the top and contain the domain folders:
+
+```
+📂 /src
+├── 📂 /Application
+│   ├── 📂 /Gps
+│   │   └── 📄 GpsService.php
+│   └── 📂 /Shared
+│       ├── 📄 FeedPuller.php
+│       └── 📄 HistoryFeedPuller.php
+├── 📂 /Domain
+│   ├── 📂 /DataProvider
+│   │   ├── 📂 /Model
+│   │   ├── 📂 /Repository
+│   │   │   └── 📄 DataProviderRepositoryInterface.php
+│   │   ├── 📂 /Service
+│   │   │   └── 📄 DataProviderService.php
+│   │   └── 📂 /Strategy
+│   │       └── 📄 DataProviderPullStrategyInterface.php
+│   └── 📂 /Gps
+│       ├── 📂 /Repository
+│       │   └── 📄 GpsRepositoryInterface.php
+│       └── 📂 /Service
+│           └── 📄 GpsManagerInterface.php
+├── 📂 /Infrastructure
+│   ├── 📂 /DataProvider
+│   │   └── 📂 /Samsara
+│   │       └── 📄 SamsaraPullStrategy.php
+│   ├── 📂 /Gps
+│   │   ├── 📂 /Clickhouse
+│   │   │   └── 📄 GpsRepository.php
+│   │   └── 📂 /Service
+│   │       └── 📄 GpsManager.php
+│   └── 📂 /Shared
+├── 📂 /Framework
+│   ├── 📂 /CompilerPass
+│   ├── 📂 /EventListener
+│   └── 📂 /Kernel
+└── 📂 /Presentation
+    ├── 📂 /DataProvider
+    │   └── 📂 /Cli
+    │       └── 📄 LatestPullCommand.php
+    ├── 📂 /Gps
+    │   └── 📂 /Api
+    │       └── 📄 GpsApiController.php
+    └── 📂 /Shared
+        └── 📂 /Api
+            └── 📂 /Controller
+                └── 📄 TmsApiController.php
+```
+
+> **Why?** A predictable directory layout makes the layer of any class obvious from its path and keeps domains
+> isolated from each other.
+
 ### Model without defaults
 
 Model[^1] properties mustn't contain default values. Service must handle the model properties.
@@ -1250,8 +1673,8 @@ Model[^1] properties mustn't contain default values. Service must handle the mod
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -1309,6 +1732,9 @@ conditionally divide the `$image` property into 3 states:
 2. Initialised with `null` value - service must assign `null` and delete the image
 3. Initialised with a new value - service must assign a new value and delete the old image
 
+> **Why?** Without defaults the service can distinguish "not provided" from "set to empty", which prevents partial
+> updates from silently overwriting existing data.
+
 ### Model without logic
 
 Model[^1] mustn't contain any logic. All logic is handled in services.
@@ -1316,8 +1742,8 @@ Model[^1] mustn't contain any logic. All logic is handled in services.
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -1378,8 +1804,8 @@ them into one composite service. For example, the composite `UserService` would 
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -1450,6 +1876,9 @@ business logic.
 Creating a composite service that will contain several specific services solves these problems. Such a service simply
 delegates tasks to specific services and serves as an interface for interacting with other classes.
 
+> **Why?** Splitting logic into focused services and exposing them through a composite keeps each class small and
+> respects the Single Responsibility Principle.
+
 ### Service interaction
 
 Services responsible for the business logic of different entities must interact with each other through the event
@@ -1459,8 +1888,8 @@ authorization logic and vice versa. Otherwise, you will get one interconnected s
 <table>
     <thead>
         <tr>
-            <th>:x: Wrong</th>
-            <th>:white_check_mark: Right</th>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
         </tr>
     </thead>
     <tbody>
@@ -1530,13 +1959,16 @@ class UserManager
 For example, there is an issue "JIRA-123 Add the ability to assign access to the Product for the User from the admin
 panel".
 
-:x: Wrong:
+❌ Wrong:
 
 JIRA-123_Add-the-ability-to-assign-access-to-the-Product-for-the-User-from-the-admin
 
-:white_check_mark: Right:
+✅ Right:
 
 jira-123-add-product-access-assignment-for-user-in-admin
+
+> **Why?** A short, consistent branch name tied to the issue ID makes branches easy to find, sort, and trace back to
+> their task.
 
 ### Meaningful commits
 
@@ -1551,13 +1983,16 @@ When committing your code, it's helpful to write useful commit messages.
 
 Your commit message should be able to end the phrase "If applied, this code will...".
 
-| :x: Wrong:                    | :white_check_mark: Right:                           |
+| ❌ Wrong:                      | ✅ Right:                                            |
 |-------------------------------|-----------------------------------------------------|
 | fixed bug                     | JIRA-123 Fix bug within login screen                |
 | refactored due to PR comments | JIRA-123 Refactor registration page for performance |
 | fixing previous commit        | JIRA-123 Fix validation tests for login form        |
 | made tests pass               | JIRA-123 Update login tests for forgotten password  |
 | jira-123 Some changes         | JIRA-123 Add product access service                 |
+
+> **Why?** Clear, imperative commit messages make the history readable and let reviewers understand each change without
+> opening the diff.
 
 ### Pull request naming
 
@@ -1569,13 +2004,16 @@ Your commit message should be able to end the phrase "If applied, this code will
 
 For example, there is an issue "JIRA-321 add new API endpoint: GET /product/{productId}/status".
 
-:x: Wrong:
+❌ Wrong:
 
 JIRA-321 add new API endpoint: GET /product/{productId}/status
 
-:white_check_mark: Right:
+✅ Right:
 
 JIRA-321 Add product status endpoint
+
+> **Why?** A concise, descriptive title tells reviewers what the PR does at a glance, and the `WIP:` prefix prevents
+> premature review or merge.
 
 ### Use rebase
 
