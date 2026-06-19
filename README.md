@@ -9,30 +9,43 @@
 
 ---
 
+## About
+
+A set of opinionated rules and conventions for writing consistent, readable, and maintainable PHP code.
+
+PHP code style extends [PSR-1](https://www.php-fig.org/psr/psr-1) and [PSR-12](https://www.php-fig.org/psr/psr-12),
+so code must also follow these standards to be compatible with this codex.
+
+---
+
 ## Table of contents
 
-- [Code style and basics](#code-style-and-basics)
+- [Types and comparisons](#types-and-comparisons)
     * [Enable strict typing](#enable-strict-typing)
     * [Use strict comparison operators](#use-strict-comparison-operators)
     * [Comparison order](#comparison-order)
     * [Compare booleans directly](#compare-booleans-directly)
     * [Check things explicitly](#check-things-explicitly)
+- [Control flow](#control-flow)
     * [Prefer match expressions](#prefer-match-expressions)
-    * [Add trailing comma](#add-trailing-comma)
     * [Avoid assignments in conditions](#avoid-assignments-in-conditions)
-    * [Avoid unnecessary variables](#avoid-unnecessary-variables)
     * [Avoid unnecessary nesting](#avoid-unnecessary-nesting)
     * [Keep if statements simple](#keep-if-statements-simple)
+- [Variables and parameters](#variables-and-parameters)
+    * [Avoid unnecessary variables](#avoid-unnecessary-variables)
+    * [Don't reuse variables for different states](#dont-reuse-variables-for-different-states)
+    * [Reduce function parameters](#reduce-function-parameters)
+    * [Use named arguments](#use-named-arguments)
+    * [Name numbers and complex regexes](#name-numbers-and-complex-regexes)
+- [Strings and formatting](#strings-and-formatting)
     * [Use quotes properly](#use-quotes-properly)
     * [Prefer sprintf for string concatenation](#prefer-sprintf-for-string-concatenation)
+    * [Add trailing comma](#add-trailing-comma)
+- [Classes and methods](#classes-and-methods)
     * [Control scope via visibility](#control-scope-via-visibility)
     * [Write small and understandable methods](#write-small-and-understandable-methods)
     * [Use immutable dates](#use-immutable-dates)
     * [Use readonly classes and properties](#use-readonly-classes-and-properties)
-    * [Reduce function parameters](#reduce-function-parameters)
-    * [Don't reuse variables for different states](#dont-reuse-variables-for-different-states)
-    * [Use named arguments](#use-named-arguments)
-    * [Name numbers and complex regexes](#name-numbers-and-complex-regexes)
 - [Exceptions](#exceptions)
     * [Throw specific exceptions](#throw-specific-exceptions)
     * [Catch specific exceptions](#catch-specific-exceptions)
@@ -42,24 +55,27 @@
     * [Document array element types with PHPDoc](#document-array-element-types-with-phpdoc)
     * [Follow commenting standards](#follow-commenting-standards)
     * [Refactor instead of explaining](#refactor-instead-of-explaining)
-- [Naming conventions](#naming-conventions)
+- [General naming](#general-naming)
     * [Favor full names](#favor-full-names)
     * [Avoid uppercased abbreviations](#avoid-uppercased-abbreviations)
+    * [Context duplication in naming](#context-duplication-in-naming)
+    * [Avoid double plural constructions](#avoid-double-plural-constructions)
     * [Name constants and enums consistently](#name-constants-and-enums-consistently)
+- [Type naming](#type-naming)
     * [Class naming](#class-naming)
     * [Interface naming](#interface-naming)
     * [Abstract class naming](#abstract-class-naming)
     * [Trait naming](#trait-naming)
     * [Enum naming](#enum-naming)
     * [Property naming](#property-naming)
-    * [Context duplication in naming](#context-duplication-in-naming)
-    * [Avoid double plural constructions](#avoid-double-plural-constructions)
+- [Method and symbol naming](#method-and-symbol-naming)
     * [Method naming](#method-naming)
     * [Repository method naming](#repository-method-naming)
     * [Filler and provider method naming](#filler-and-provider-method-naming)
     * [Event naming](#event-naming)
     * [Event class naming](#event-class-naming)
     * [Event subscriber naming](#event-subscriber-naming)
+- [Routing naming](#routing-naming)
     * [Route path naming](#route-path-naming)
     * [HTTP methods for actions](#http-methods-for-actions)
 - [ADRs](#adrs)
@@ -79,10 +95,7 @@
 
 ---
 
-## Code style and basics
-
-PHP code style extends [PSR-1](https://www.php-fig.org/psr/psr-1) and [PSR-12](https://www.php-fig.org/psr/psr-12),
-so code must also follow these standards to be compatible with this codex.
+## Types and comparisons
 
 ### Enable strict typing
 
@@ -193,6 +206,8 @@ Use all of the above even in cases where side effects are almost impossible.
 > **Why?** To avoid side effects. Explicit checks are easier to read, less surprising, and safer if the surrounding
 > code changes later.
 
+## Control flow
+
 ### Prefer match expressions
 
 Use `match` instead of `switch` to simplify conditional logic and reduce the "cognitive load" required to read the code.
@@ -259,59 +274,6 @@ $message = match ($statusCode) {
 
 > **Why?** For strict type checks and to avoid huge obscure and hard to read structures.
 
-### Add trailing comma
-
-Always add a trailing comma in multiline arrays, objects, functions, etc.
-
-<table>
-    <thead>
-        <tr>
-            <th>❌ Wrong</th>
-            <th>✅ Right</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td>
-
-```php
-public function create(
-    ProductCreateModel $model,
-    User $user
-): Product {
-    $data = [
-        'name' => $model->name,
-        'type' => $model->type
-    ];
-
-    // ...
-}
-```
-
-</td>
-<td>
-
-```php
-public function create(
-    ProductCreateModel $model,
-    User $user,
-): Product {
-    $data = [
-        'name' => $model->name,
-        'type' => $model->type,
-    ];
-
-    // ...
-}
-```
-
-</td>
-        </tr>
-    </tbody>
-</table>
-
-> **Why?** This leads to cleaner git diffs and simplifies adding and removing items.
-
 ### Avoid assignments in conditions
 
 Don't perform assignments within conditional statements. All variable assignments must be completed as independent
@@ -367,89 +329,6 @@ if ($result !== null) {
 
 > **Why?** Assignments in conditions perform two distinct actions (assignment and comparison) in a single line, making
 > the code harder to read, maintain, and debug.
-
-### Avoid unnecessary variables
-
-Avoid temporary variables when they don't clarify the code.
-
-<table>
-    <thead>
-        <tr>
-            <th>❌ Wrong</th>
-            <th>✅ Right</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td>
-
-```php
-function find(int $needle, array $haystack): bool
-{
-    $found = false;
-
-    foreach ($haystack as $item) {
-        if ($needle === $item) {
-            $found = true;
-
-            break;
-        }
-    }
-
-    return $found;
-}
-
-function getValue(): int
-{
-    // ...
-
-    $value = $this->get();
-
-    return $value;
-}
-```
-
-</td>
-<td>
-
-```php
-function find(int $needle, array $haystack): bool
-{
-    foreach ($haystack as $item) {
-        if ($needle === $item) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-function getValue(): int
-{
-    // ...
-
-    return $this->get();
-}
-```
-
-</td>
-        </tr>
-    </tbody>
-</table>
-
-**Exception:** use variables when they improve readability or help explain a complex condition.
-
-```php
-function canModify(Product $product): bool
-{
-    $rightsGranted = $this->isAdmin() || $this->isOwner($product);
-    $productEditable = $this->isNew($product) && !$this->isLocked($product);
-
-    return $rightsGranted && $productEditable;
-}
-```
-
-> **Why?** Extra variables add noise, but useful variables can make the code easier to understand.
 
 ### Avoid unnecessary nesting
 
@@ -597,6 +476,267 @@ return $result;
 
 > **Why?** Simpler control flow is easier to read, test, and maintain.
 
+## Variables and parameters
+
+### Avoid unnecessary variables
+
+Avoid temporary variables when they don't clarify the code.
+
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+function find(int $needle, array $haystack): bool
+{
+    $found = false;
+
+    foreach ($haystack as $item) {
+        if ($needle === $item) {
+            $found = true;
+
+            break;
+        }
+    }
+
+    return $found;
+}
+
+function getValue(): int
+{
+    // ...
+
+    $value = $this->get();
+
+    return $value;
+}
+```
+
+</td>
+<td>
+
+```php
+function find(int $needle, array $haystack): bool
+{
+    foreach ($haystack as $item) {
+        if ($needle === $item) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function getValue(): int
+{
+    // ...
+
+    return $this->get();
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+**Exception:** use variables when they improve readability or help explain a complex condition.
+
+```php
+function canModify(Product $product): bool
+{
+    $rightsGranted = $this->isAdmin() || $this->isOwner($product);
+    $productEditable = $this->isNew($product) && !$this->isLocked($product);
+
+    return $rightsGranted && $productEditable;
+}
+```
+
+> **Why?** Extra variables add noise, but useful variables can make the code easier to understand.
+
+### Don't reuse variables for different states
+
+Don't assign different states or representations of a value to the same variable. Introduce a new, descriptive variable
+for each state.
+
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+$name = 'John';
+$name = sprintf('%s %s', $name, $lastName);
+$name = preg_replace($pattern, '', $name);
+```
+
+</td>
+<td>
+
+```php
+$name = 'John';
+$fullName = sprintf('%s %s', $name, $lastName);
+$filteredFullName = preg_replace($pattern, '', $fullName);
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** Reusing a variable for different states hides the data flow and makes the code harder to follow and debug.
+
+### Reduce function parameters
+
+The maximum number of function parameters should be three. Every parameter you add to a function signature makes that
+function harder to understand. If more parameters are needed, group them into a dedicated object.
+
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+function createUser(
+    string $name,
+    string $email,
+    int $age,
+    string $country,
+): User {
+    // ...
+}
+```
+
+</td>
+<td>
+
+```php
+function createUser(CreateUserModel $model): User {
+    // ...
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** To make code more maintainable, scalable, and easier to read.
+
+### Use named arguments
+
+Use named arguments for:
+
+1. Multiline method calls.
+2. Any boolean argument.
+
+You can skip named arguments when the method can be called on a single line and has no boolean argument.
+
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+$this->createUser($name, $email, true);
+```
+
+</td>
+<td>
+
+```php
+$this->createUser(
+    name: $name,
+    email: $email,
+    active: true,
+);
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** Named arguments document the meaning of each value at the call site, especially for booleans and long
+> argument lists.
+
+### Name numbers and complex regexes
+
+Extract magic numbers used in formulas into named constants. Apply the same approach to complex regular expressions,
+unless the variable name already explains the regex purpose.
+
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+$weightKg = $weightGrams / 1000;
+```
+
+</td>
+<td>
+
+```php
+$weightKg = $weightGrams / self::GRAMS_IN_KILOGRAM;
+```
+
+</td>
+        </tr>
+        <tr>
+<td>
+
+```php
+preg_match('/^\+?[1-9]\d{7,14}$/', $phone);
+```
+
+</td>
+<td>
+
+```php
+preg_match(self::E164_PHONE_PATTERN, $phone);
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** Named constants make formulas self-explanatory and prevent the meaning of a value from being lost.
+
+## Strings and formatting
+
 ### Use quotes properly
 
 Use single quotes for strings by default. Use double quotes only when the string contains single quotes or requires
@@ -633,6 +773,61 @@ $url = sprintf(
 ```
 
 > **Why?** To separate the string template from its values, making long strings easier to read.
+
+### Add trailing comma
+
+Always add a trailing comma in multiline arrays, objects, functions, etc.
+
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+public function create(
+    ProductCreateModel $model,
+    User $user
+): Product {
+    $data = [
+        'name' => $model->name,
+        'type' => $model->type
+    ];
+
+    // ...
+}
+```
+
+</td>
+<td>
+
+```php
+public function create(
+    ProductCreateModel $model,
+    User $user,
+): Product {
+    $data = [
+        'name' => $model->name,
+        'type' => $model->type,
+    ];
+
+    // ...
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+> **Why?** This leads to cleaner git diffs and simplifies adding and removing items.
+
+## Classes and methods
 
 ### Control scope via visibility
 
@@ -763,180 +958,6 @@ readonly class UserModel
 lifecycle changes).
 
 > **Why?** Readonly modifier prevents accidental mutation after initialization and disallows dynamic property creation.
-
-### Reduce function parameters
-
-The maximum number of function parameters should be three. Every parameter you add to a function signature makes that
-function harder to understand. If more parameters are needed, group them into a dedicated object.
-
-<table>
-    <thead>
-        <tr>
-            <th>❌ Wrong</th>
-            <th>✅ Right</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td>
-
-```php
-function createUser(
-    string $name,
-    string $email,
-    int $age,
-    string $country,
-): User {
-    // ...
-}
-```
-
-</td>
-<td>
-
-```php
-function createUser(CreateUserModel $model): User {
-    // ...
-}
-```
-
-</td>
-        </tr>
-    </tbody>
-</table>
-
-> **Why?** To make code more maintainable, scalable, and easier to read.
-
-### Don't reuse variables for different states
-
-Don't assign different states or representations of a value to the same variable. Introduce a new, descriptive variable
-for each state.
-
-<table>
-    <thead>
-        <tr>
-            <th>❌ Wrong</th>
-            <th>✅ Right</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td>
-
-```php
-$name = 'John';
-$name = sprintf('%s %s', $name, $lastName);
-$name = preg_replace($pattern, '', $name);
-```
-
-</td>
-<td>
-
-```php
-$name = 'John';
-$fullName = sprintf('%s %s', $name, $lastName);
-$filteredFullName = preg_replace($pattern, '', $fullName);
-```
-
-</td>
-        </tr>
-    </tbody>
-</table>
-
-> **Why?** Reusing a variable for different states hides the data flow and makes the code harder to follow and debug.
-
-### Use named arguments
-
-Use named arguments for:
-
-1. Multiline method calls.
-2. Any boolean argument.
-
-You can skip named arguments when the method can be called on a single line and has no boolean argument.
-
-<table>
-    <thead>
-        <tr>
-            <th>❌ Wrong</th>
-            <th>✅ Right</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td>
-
-```php
-$this->createUser($name, $email, true);
-```
-
-</td>
-<td>
-
-```php
-$this->createUser(
-    name: $name,
-    email: $email,
-    active: true,
-);
-```
-
-</td>
-        </tr>
-    </tbody>
-</table>
-
-> **Why?** Named arguments document the meaning of each value at the call site, especially for booleans and long
-> argument lists.
-
-### Name numbers and complex regexes
-
-Extract magic numbers used in formulas into named constants. Apply the same approach to complex regular expressions,
-unless the variable name already explains the regex purpose.
-
-<table>
-    <thead>
-        <tr>
-            <th>❌ Wrong</th>
-            <th>✅ Right</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td>
-
-```php
-$weightKg = $weightGrams / 1000;
-```
-
-</td>
-<td>
-
-```php
-$weightKg = $weightGrams / self::GRAMS_IN_KILOGRAM;
-```
-
-</td>
-        </tr>
-        <tr>
-<td>
-
-```php
-preg_match('/^\+?[1-9]\d{7,14}$/', $phone);
-```
-
-</td>
-<td>
-
-```php
-preg_match(self::E164_PHONE_PATTERN, $phone);
-```
-
-</td>
-        </tr>
-    </tbody>
-</table>
-
-> **Why?** Named constants make formulas self-explanatory and prevent the meaning of a value from being lost.
 
 ## Exceptions
 
@@ -1165,7 +1186,7 @@ if ($this->isProductManager($user)) {
 
 ---
 
-## Naming conventions
+## General naming
 
 ### Favor full names
 
@@ -1196,6 +1217,68 @@ word and only capitalize its first letter.
 > **Why?** Consistent casing keeps multi-word names readable and avoids ambiguous boundaries between stacked
 > abbreviations.
 
+### Context duplication in naming
+
+Don't repeat the class context in property, folder, or method names. Keep full names for classes, but drop the
+redundant context from members. This avoids unnecessary line breaks and improves readability.
+
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+readonly class FileCategoryService
+{
+    public function __construct(
+        private FileCategoryManagerInterface $fileCategoryManager,
+        private FileCategoryRepositoryInterface $fileCategoryRepository,
+    ) {
+    }
+}
+```
+
+</td>
+<td>
+
+```php
+readonly class FileCategoryService
+{
+    public function __construct(
+        private FileCategoryManagerInterface $manager,
+        private FileCategoryRepositoryInterface $repository,
+    ) {
+    }
+}
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
+
+The same applies to methods. For example, in `LoadManagerInterface` use `get()`, `create(LoadModel $model)` and
+`update(LoadModel $model)` instead of `getLoad()`, `createNewLoad()` and `updateLoadByModel()`.
+
+> **Why?** The class already provides the context, so repeating it in members only adds noise and unnecessary line
+> breaks.
+
+### Avoid double plural constructions
+
+Don't pluralize both parts of a compound name. Pluralize only the trailing noun.
+
+| ❌ Wrong:        | ✅ Right:       |
+|-----------------|----------------|
+| `$driversLoads` | `$driverLoads` |
+
+> **Why?** Pluralizing only the trailing noun reads as natural English and keeps the meaning unambiguous.
+
 ### Name constants and enums consistently
 
 Constant and enum case names must be uppercase. Start the name with the shared prefix, followed by the specific part.
@@ -1206,6 +1289,8 @@ Constant and enum case names must be uppercase. Start the name with the shared p
 | `FAILED_STATUS`    | `STATUS_FAILED`    |
 
 > **Why?** Shared prefixes group related constants visually, making them easier to scan and auto-complete.
+
+## Type naming
 
 ### Class naming
 
@@ -1288,67 +1373,7 @@ class Entity
 > **Why?** Properties hold state, not actions. Nouns and adjectives describe that state, while verbs and questions
 > belong to methods.
 
-### Context duplication in naming
-
-Don't repeat the class context in property, folder, or method names. Keep full names for classes, but drop the
-redundant context from members. This avoids unnecessary line breaks and improves readability.
-
-<table>
-    <thead>
-        <tr>
-            <th>❌ Wrong</th>
-            <th>✅ Right</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td>
-
-```php
-readonly class FileCategoryService
-{
-    public function __construct(
-        private FileCategoryManagerInterface $fileCategoryManager,
-        private FileCategoryRepositoryInterface $fileCategoryRepository,
-    ) {
-    }
-}
-```
-
-</td>
-<td>
-
-```php
-readonly class FileCategoryService
-{
-    public function __construct(
-        private FileCategoryManagerInterface $manager,
-        private FileCategoryRepositoryInterface $repository,
-    ) {
-    }
-}
-```
-
-</td>
-        </tr>
-    </tbody>
-</table>
-
-The same applies to methods. For example, in `LoadManagerInterface` use `get()`, `create(LoadModel $model)` and
-`update(LoadModel $model)` instead of `getLoad()`, `createNewLoad()` and `updateLoadByModel()`.
-
-> **Why?** The class already provides the context, so repeating it in members only adds noise and unnecessary line
-> breaks.
-
-### Avoid double plural constructions
-
-Don't pluralize both parts of a compound name. Pluralize only the trailing noun.
-
-| ❌ Wrong:        | ✅ Right:       |
-|-----------------|----------------|
-| `$driversLoads` | `$driverLoads` |
-
-> **Why?** Pluralizing only the trailing noun reads as natural English and keeps the meaning unambiguous.
+## Method and symbol naming
 
 ### Method naming
 
@@ -1484,6 +1509,8 @@ Example: `ResetPasswordSubscriber`.
 
 > **Why?** A subscriber can receive many events, but with the same required action, so its name must describe the
 > action it performs.
+
+## Routing naming
 
 ### Route path naming
 
