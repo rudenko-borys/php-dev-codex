@@ -51,7 +51,7 @@ symlink (`.claude/rules/project.md`).
 - `CLAUDE.md`: replace every `<placeholder>`, keep the "Before finishing a task" list, add only what Claude cannot
   read from the code (env vars, running services, gotchas).
 - `rules/presentation.md` and `rules/tests.md`: edit the `paths:` globs if the project layout differs.
-- PHPStan level: the rules say "project level, 9 by default"; set the real one in `phpstan.neon` and the hook
+- PHPStan level: the rules say "project level, `max` for new projects"; set the real one in `phpstan.neon` and the hook
   enforces it.
 - Drop a rule file you don't need (a project without Messenger can delete `SN2` lines); run
   `php bin/check-sync.php` in this repository only, not in the project.
@@ -59,7 +59,7 @@ symlink (`.claude/rules/project.md`).
 ## How the agent version is written
 
 - **One line per rule**, `- **ID Heading**: instruction.` The ID lets reviews cite the human codex.
-- **Numbers over adjectives**: "max 3 parameters", "level 9", "never nest deeper than 2".
+- **Numbers over adjectives**: "max 3 parameters", "level max", "never nest deeper than 2".
 - **Every carve-out inline** as `Exception:`; agents don't infer exceptions.
 - **Prohibition + replacement**: "never `empty()`; use `$value === null`".
 - **No Why paragraphs, no TOC, no HTML tables**: each of those costs tokens on every turn and adds nothing an agent

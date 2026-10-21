@@ -1,7 +1,7 @@
 # PHP developer codex 📔
 
-[![PHP](https://img.shields.io/badge/v8.3-blue?logo=php&labelColor=grey&logoColor=white)](https://www.php.net)
-[![Symfony](https://img.shields.io/badge/v6.4-blue?logo=symfony&labelColor=grey)](https://symfony.com/doc/6.4/index.html)
+[![PHP](https://img.shields.io/badge/v8.5-blue?logo=php&labelColor=grey&logoColor=white)](https://www.php.net)
+[![Symfony](https://img.shields.io/badge/v8.1-blue?logo=symfony&labelColor=grey)](https://symfony.com/doc/current/index.html)
 
 <a href="https://github.com/vshymanskyy/StandWithUkraine/blob/main/docs/README.md">
   <img src="https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-no-action.svg" alt="Stand With Ukraine" />
@@ -16,8 +16,10 @@ A set of opinionated rules and conventions for writing consistent, readable, and
 PHP code style extends [PSR-1](https://www.php-fig.org/psr/psr-1) and [PSR-12](https://www.php-fig.org/psr/psr-12),
 so code must also follow these standards to be compatible with this codex.
 
-The codex targets **PHP 8.3** and **Symfony 6.4**. Don't use syntax from newer PHP versions (property hooks,
-asymmetric visibility, `new` without parentheses) until the project upgrades.
+The codex targets **PHP 8.5** and **Symfony 8.1** (Symfony 7.4 LTS is equivalent for every rule here). Use the
+current language features where a rule names them: property hooks, asymmetric visibility (`private(set)`), `new`
+without wrapping parentheses, `array_find()`/`array_any()`/`array_all()`, `array_first()`/`array_last()`, and
+`clone()` with property overrides. Tooling baseline: PHPUnit 13, PHPStan 2.
 
 Every rule has a stable ID (`<!-- rule: XX -->` under its heading) so that reviews, tooling, and the
 [agent version](agent/README.md) of this codex can reference it. See [RULE_FORMAT](RULE_FORMAT.md) for how to write a
@@ -49,6 +51,7 @@ rule and [agent/README.md](agent/README.md) for using the codex with Claude Code
     * [Avoid flag arguments](#avoid-flag-arguments)
     * [Avoid output arguments](#avoid-output-arguments)
     * [Use null-safe operators](#use-null-safe-operators)
+    * [Use array search functions](#use-array-search-functions)
 - [Strings and formatting](#strings-and-formatting)
     * [Use quotes properly](#use-quotes-properly)
     * [Prefer sprintf for string concatenation](#prefer-sprintf-for-string-concatenation)
@@ -65,6 +68,7 @@ rule and [agent/README.md](agent/README.md) for using the codex with Claude Code
     * [Inject the clock](#inject-the-clock)
     * [Use attributes instead of annotations](#use-attributes-instead-of-annotations)
     * [Use value objects for validated primitives](#use-value-objects-for-validated-primitives)
+    * [Chain on new without extra parentheses](#chain-on-new-without-extra-parentheses)
 - [Enums](#enums)
     * [Use backed enums for persisted values](#use-backed-enums-for-persisted-values)
     * [Convert enums at the boundaries](#convert-enums-at-the-boundaries)
@@ -280,8 +284,8 @@ with a PHPDoc that narrows it where possible.
 ### Pass static analysis
 <!-- rule: TC7 -->
 
-Code must pass [PHPStan](https://phpstan.org) at the level configured in the project (level `9` by default) with
-zero errors and zero new baseline entries. Fix the code, not the analyser: don't add `@phpstan-ignore` or
+Code must pass [PHPStan](https://phpstan.org) 2 at the level configured in the project (`max`, i.e. level `10`,
+for new projects) with zero errors and zero new baseline entries. Fix the code, not the analyser: don't add `@phpstan-ignore` or
 `/** @var */` casts to silence a real problem.
 
 | ❌ Wrong:                                          | ✅ Right:                                    |
@@ -910,6 +914,23 @@ by a dedicated method instead.
 
 > **Why?** The operators express "maybe absent" in one token and remove a branch that exists only for `null`.
 
+### Use array search functions
+<!-- rule: VP9 -->
+
+Use `array_find()`, `array_find_key()`, `array_any()`, `array_all()`, `array_first()`, and `array_last()` instead of
+a `foreach` that searches and breaks, or `reset()`/`end()` tricks to reach the first or last element.
+
+| ❌ Wrong:                                                      | ✅ Right:                                                   |
+|---------------------------------------------------------------|------------------------------------------------------------|
+| `foreach ($items as $item) { if ($item->isActive()) { return $item; } } return null;` | `return array_find($items, static fn (Item $item) => $item->isActive());` |
+| `foreach ($ids as $id) { if ($id === $needle) { return true; } } return false;` | `return array_any($ids, static fn (int $id) => $id === $needle);` |
+| `$first = reset($rows);`                                      | `$first = array_first($rows);`                              |
+
+Use `in_array($needle, $haystack, strict: true)` for a plain membership test; `array_any` is for a predicate.
+
+> **Why?** The function name states the intent (find one, check any, check all) that a loop with a `break` forces the
+> reader to reconstruct, and there is no loop variable or flag left behind.
+
 ## Strings and formatting
 
 ### Use quotes properly
@@ -1165,6 +1186,9 @@ lifecycle changes), and Models (DTOs) whose properties are filled from outside a
 [Model without defaults](#model-without-defaults)): a `readonly` property can only be initialised from inside its
 class, so such models stay non-readonly.
 
+When only one property needs internal mutation, keep the rest `readonly` and declare that property with asymmetric
+visibility (`public private(set) int $hits = 0;`) instead of dropping `readonly` from the whole class.
+
 > **Why?** Readonly modifier prevents accidental mutation after initialization and disallows dynamic property creation.
 
 ### Make classes final
@@ -1355,10 +1379,26 @@ function invite(Email $email): void
 </table>
 
 A value object is not a Model[^1]: it has no setters, is immutable, and its only logic is validation and
-derived accessors. Models still hold plain properties and are filled by services.
+derived accessors. A modified copy comes from a `with*()` method that uses `clone()` with property overrides
+(`return clone($this, ['value' => $value]);`), which re-runs nothing and keeps the original untouched. Models
+still hold plain properties and are filled by services.
 
 > **Why?** The check runs once, in one place, and the type guarantees it. Every method that receives an `Email`
 > knows it is valid without re-validating.
+
+### Chain on new without extra parentheses
+<!-- rule: CM12 -->
+
+Call a method or access a property on a freshly created object directly: `new Foo()->bar()`. Never wrap the
+constructor call in parentheses, and always keep the constructor's own parentheses even without arguments.
+
+| ❌ Wrong:                                   | ✅ Right:                               |
+|--------------------------------------------|----------------------------------------|
+| `(new DateTimeImmutable())->format('Y')`   | `new DateTimeImmutable()->format('Y')` |
+| `(new Builder)->withName($name)->build()`  | `new Builder()->withName($name)->build()` |
+
+> **Why?** Since PHP 8.4 the wrapping parentheses are noise, and the constructor parentheses keep `new Foo()` visually
+> distinct from a constant or class reference.
 
 ## Enums
 
@@ -2407,7 +2447,8 @@ conditionally divide the `$image` property into 3 states:
 ### Model without logic
 <!-- rule: AD4 -->
 
-Model[^1] mustn't contain any logic, including static factory methods. A model is built in exactly two places: the
+Model[^1] mustn't contain any logic, including static factory methods and property hooks (`get`/`set` blocks on a
+property are logic). A model is built in exactly two places: the
 `Presentation` layer maps external input into it (form, serializer, command arguments), and a filler service (see
 [Filler and provider method naming](#filler-and-provider-method-naming)) builds it from entities or other internal
 data. Managers and composite services consume models; they never build one from a raw array.

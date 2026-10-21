@@ -1,7 +1,7 @@
 # PHP codex: core rules
 
 Always loaded. IDs match headings in the human codex (README.md of php-dev-codex). Cite IDs in reviews.
-Stack: PHP 8.3, Symfony 6.4. Do not use PHP 8.4+ syntax (property hooks, asymmetric visibility, `new` without parentheses).
+Stack: PHP 8.5, Symfony 8.1 (7.4 LTS equivalent), PHPUnit 13, PHPStan 2. Use current syntax where a rule names it: `private(set)`, `new Foo()->bar()`, `array_find/any/all/first/last`, `clone($obj, [...])`.
 
 ## Types and comparisons
 
@@ -11,7 +11,7 @@ Stack: PHP 8.3, Symfony 6.4. Do not use PHP 8.4+ syntax (property hooks, asymmet
 - **TC4 Compare booleans directly**: `return $valid;` not `return $valid === true;`. Exception: non-bool values (`strpos(...) === false`).
 - **TC5 Check things explicitly**: never `empty()`. Use `$value === null`, `$array !== []`, `$string !== ''`, `$object !== null`, `count($countable) > 0`.
 - **TC6 Avoid mixed and untyped arrays**: no `mixed`; every `array` gets a PHPDoc shape (`list<T>`, `array<string, T>`, `array{...}`); a method that always throws returns `never`.
-- **TC7 Pass static analysis**: code passes PHPStan at the project level (9 by default) with zero errors. Fix the code, never add `@phpstan-ignore` or `/** @var */` casts to silence a real problem.
+- **TC7 Pass static analysis**: code passes PHPStan 2 at the project level (`max` = level 10 for new projects) with zero errors. Fix the code, never add `@phpstan-ignore` or `/** @var */` casts to silence a real problem.
 
 ## Control flow
 
@@ -30,6 +30,7 @@ Stack: PHP 8.3, Symfony 6.4. Do not use PHP 8.4+ syntax (property hooks, asymmet
 - **VP6 Avoid flag arguments**: no `bool` parameter that switches behaviour; split into two methods or pass an enum. Exception: a boolean that is data (`active: true`) passed as a named argument.
 - **VP7 Avoid output arguments**: return results; no `&` references, no "pass a model in to fill it". Exception: built-ins like `preg_match`.
 - **VP8 Use null-safe operators**: `$user?->getEmail()`, `$options['limit'] ?? 10` instead of `isset`/ternary/`if` for null. Max two `?->` in a chain.
+- **VP9 Use array search functions**: `array_find()`, `array_find_key()`, `array_any()`, `array_all()`, `array_first()`, `array_last()` instead of a `foreach` that searches and breaks or `reset()`/`end()`. Plain membership stays `in_array(..., strict: true)`.
 
 ## Strings and formatting
 
@@ -42,14 +43,15 @@ Stack: PHP 8.3, Symfony 6.4. Do not use PHP 8.4+ syntax (property hooks, asymmet
 - **CM1 Control scope via visibility**: `private` by default, `protected` only for subclass access, `public` only for external callers.
 - **CM2 Write small and understandable methods**: max 50 lines per method. Exception: declarative config (schemas, form layouts).
 - **CM3 Use immutable dates**: `DateTimeImmutable` only, never `DateTime`.
-- **CM4 Use readonly classes and properties**: services and value objects are `readonly`. Exception: classes with internal mutable state (cache, memoization) and Models filled from outside (readonly props can only be set inside the class).
+- **CM4 Use readonly classes and properties**: services and value objects are `readonly`. Exception: classes with internal mutable state (cache, memoization) and Models filled from outside (readonly props can only be set inside the class). If only one property mutates, keep the class readonly and declare that property `public private(set)` instead.
 - **CM5 Make classes final**: `final` on every class except `Abstract*` bases, Doctrine entities, and classes a framework subclasses.
 - **CM6 Use constructor property promotion**: dependencies and fields as promoted constructor properties; no separate declaration + assignment.
 - **CM7 Order class members**: constants → properties → constructor → public → protected → private; callee directly below its first caller.
 - **CM8 Separate commands from queries**: a method either mutates and returns `void`, or returns a value with no side effects. Exception: `create()` returns the created entity (in `Manager::create()` and in the composite service method that delegates to it); never return a nullable id or bool as a success signal.
 - **CM9 Inject the clock**: never `new DateTimeImmutable()`, `time()`, `date()` in services; inject `Psr\Clock\ClockInterface` and use `$this->clock->now()`. Exception: timestamps set inside Doctrine lifecycle callbacks in the entity, display-only console output. A `createdAt` set on a model in a service uses the clock.
 - **CM10 Use attributes instead of annotations**: `#[Route]`, `#[ORM\Column]`, `#[Assert\NotBlank]`; never `@Route` / `@ORM` docblocks.
-- **CM11 Use value objects for validated primitives**: email, money, percentage, formatted IDs are `final readonly` classes validating in the constructor; pass the object through Domain and Application. Value objects are not Models: immutable, no setters, no business logic beyond validation.
+- **CM11 Use value objects for validated primitives**: email, money, percentage, formatted IDs are `final readonly` classes validating in the constructor; pass the object through Domain and Application. Value objects are not Models: immutable, no setters, no business logic beyond validation. Modified copies via `with*()` returning `clone($this, ['value' => $new])`.
+- **CM12 Chain on new without extra parentheses**: `new DateTimeImmutable()->format('Y')`, never `(new DateTimeImmutable())->format('Y')`; always keep the constructor `()`.
 
 ## Enums
 

@@ -14,7 +14,8 @@ This repository is a coding style guide, not an application. Two deliverables mu
   `- **ID Heading**: ...` line in the right `agent/rules/` file.
 - Never renumber or reuse IDs.
 - Examples must be behaviour-preserving: the Right side keeps every side effect of the Wrong side.
-- Target stack for all examples: PHP 8.3, Symfony 6.4. No PHP 8.4 syntax.
+- Target stack for all examples: PHP 8.5, Symfony 8.1 (7.4 LTS equivalent), PHPUnit 13, PHPStan 2. Examples use
+  current syntax (`new Foo()->bar()`, `private(set)`, `array_find()`), never workarounds for older PHP.
 
 ## Verify before finishing
 
