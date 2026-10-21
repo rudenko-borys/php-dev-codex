@@ -1,7 +1,7 @@
 # PHP developer codex 📔
 
 [![PHP](https://img.shields.io/badge/v8.5-blue?logo=php&labelColor=grey&logoColor=white)](https://www.php.net)
-[![Symfony](https://img.shields.io/badge/v8.1-blue?logo=symfony&labelColor=grey)](https://symfony.com/doc/current/index.html)
+[![Symfony](https://img.shields.io/badge/v7.4-blue?logo=symfony&labelColor=grey)](https://symfony.com/doc/7.4/index.html)
 
 <a href="https://github.com/vshymanskyy/StandWithUkraine/blob/main/docs/README.md">
   <img src="https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner2-no-action.svg" alt="Stand With Ukraine" />
@@ -16,7 +16,7 @@ A set of opinionated rules and conventions for writing consistent, readable, and
 PHP code style extends [PSR-1](https://www.php-fig.org/psr/psr-1) and [PSR-12](https://www.php-fig.org/psr/psr-12),
 so code must also follow these standards to be compatible with this codex.
 
-The codex targets **PHP 8.5** and **Symfony 8.1** (Symfony 7.4 LTS is equivalent for every rule here). Use the
+The codex targets **PHP 8.5** and **[Symfony 7.4 LTS](https://symfony.com/doc/7.4/index.html)**. Use the
 current language features where a rule names them: property hooks, asymmetric visibility (`private(set)`), `new`
 without wrapping parentheses, `array_find()`/`array_any()`/`array_all()`, `array_first()`/`array_last()`, and
 `clone()` with property overrides. Tooling baseline: PHPUnit 13, PHPStan 2.

@@ -1,7 +1,7 @@
 # PHP codex: core rules
 
 Always loaded. IDs match headings in the human codex (README.md of php-dev-codex). Cite IDs in reviews.
-Stack: PHP 8.5, Symfony 8.1 (7.4 LTS equivalent), PHPUnit 13, PHPStan 2. Use current syntax where a rule names it: `private(set)`, `new Foo()->bar()`, `array_find/any/all/first/last`, `clone($obj, [...])`.
+Stack: PHP 8.5, Symfony 7.4 LTS, PHPUnit 13, PHPStan 2. Use current syntax where a rule names it: `private(set)`, `new Foo()->bar()`, `array_find/any/all/first/last`, `clone($obj, [...])`.
 
 ## Types and comparisons
 

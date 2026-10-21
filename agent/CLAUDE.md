@@ -6,7 +6,7 @@
 
 ## Stack
 
-- PHP 8.5, Symfony 8.1, Doctrine ORM, PHPUnit 13, PHPStan 2 at level `max`.
+- PHP 8.5, Symfony 7.4 LTS, Doctrine ORM, PHPUnit 13, PHPStan 2 at level `max`.
 - Use current PHP syntax: `private(set)`, property hooks where a rule allows them, `new Foo()->bar()`,
   `array_find()`/`array_any()`/`array_all()`, `clone($obj, [...])`. Don't write PHP 8.3-era workarounds for them.
 
