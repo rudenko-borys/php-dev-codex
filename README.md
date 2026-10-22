@@ -16,11 +16,6 @@ A set of opinionated rules and conventions for writing consistent, readable, and
 PHP code style extends [PSR-1](https://www.php-fig.org/psr/psr-1) and [PSR-12](https://www.php-fig.org/psr/psr-12),
 so code must also follow these standards to be compatible with this codex.
 
-The codex targets **PHP 8.5** and **[Symfony 7.4 LTS](https://symfony.com/doc/7.4/index.html)**. Use the
-current language features where a rule names them: property hooks, asymmetric visibility (`private(set)`), `new`
-without wrapping parentheses, `array_find()`/`array_any()`/`array_all()`, `array_first()`/`array_last()`, and
-`clone()` with property overrides. Tooling baseline: PHPUnit 13, PHPStan 2.
-
 Every rule has a stable ID (`<!-- rule: XX -->` under its heading) so that reviews, tooling, and the
 [agent version](agent/README.md) of this codex can reference it. See [RULE_FORMAT](RULE_FORMAT.md) for how to write a
 rule and [agent/README.md](agent/README.md) for using the codex with Claude Code.
