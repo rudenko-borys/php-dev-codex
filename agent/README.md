@@ -8,7 +8,6 @@ matching paths.
 
 | Path | Purpose | Loaded |
 |------|---------|--------|
-| `CLAUDE.md` | Template for a project's root `CLAUDE.md`: stack, pointer to the rules, five hard constraints, finish checklist | every session |
 | `rules/php-core.md` | Types, control flow, parameters, strings, classes, enums, exceptions, comments | every session |
 | `rules/naming.md` | General, type, method, event naming | every session |
 | `rules/architecture.md` | Layers, directory tree, models, repositories, services, DI | every session |
@@ -29,7 +28,15 @@ PROJECT=/path/to/your-project
 mkdir -p "$PROJECT/.claude/rules" "$PROJECT/.claude/skills"
 cp "$CODEX"/agent/rules/*.md            "$PROJECT/.claude/rules/"
 cp -R "$CODEX"/agent/skills/codex-review "$PROJECT/.claude/skills/"
-cp "$CODEX"/agent/CLAUDE.md             "$PROJECT/CLAUDE.md"      # then fill in the placeholders
+```
+
+Then add a pointer to the project's own `CLAUDE.md` so the rules are applied and cited:
+
+```markdown
+## Code rules
+
+Coding rules live in `.claude/rules/` (PHP developer codex) and apply to every PHP file. Cite rule IDs
+(`CM5`, `AD1`) when reviewing or explaining a change.
 ```
 
 Commit all of it.
@@ -46,8 +53,6 @@ symlink (`.claude/rules/project.md`).
 
 ## Adjust per project
 
-- `CLAUDE.md`: replace every `<placeholder>`, keep the "Before finishing a task" list, add only what Claude cannot
-  read from the code (env vars, running services, gotchas).
 - `rules/presentation.md` and `rules/tests.md`: edit the `paths:` globs if the project layout differs.
 - PHPStan level: the rules say "project level, `max` for new projects"; set the real one in `phpstan.neon` and run
   it in the project's quality gate (CI, pre-commit, or your agent framework's gates).
@@ -64,8 +69,8 @@ symlink (`.claude/rules/project.md`).
   acts on. The first sentence of the human `Why` is kept only where it changes behaviour in unseen cases.
 - **Enforce with tools where possible**: php-cs-fixer, PHPStan, and tests run in the project's quality gate; the
   prose covers only what tools can't check (naming semantics, architecture, test design).
-- **Emphasis is rare**: a single `IMPORTANT` line is noticed, ten are ignored. The template keeps only the five
-  most-violated constraints in `CLAUDE.md`.
+- **Emphasis is rare**: a single `IMPORTANT` line is noticed, ten are ignored. If a project keeps violating a rule,
+  repeat that one rule in its `CLAUDE.md`, not the whole list.
 
 ## Keep in sync
 
