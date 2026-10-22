@@ -16,9 +16,9 @@ A set of opinionated rules and conventions for writing consistent, readable, and
 PHP code style extends [PSR-1](https://www.php-fig.org/psr/psr-1) and [PSR-12](https://www.php-fig.org/psr/psr-12),
 so code must also follow these standards to be compatible with this codex.
 
-Every rule has a stable ID (`<!-- rule: XX -->` under its heading) so that reviews, tooling, and the
-[agent version](agent/README.md) of this codex can reference it. See [RULE_FORMAT](RULE_FORMAT.md) for how to write a
-rule and [agent/README.md](agent/README.md) for using the codex with Claude Code.
+For AI coding agents there is a dedicated version of this codex: see [agent/README.md](agent/README.md). To let
+agents and reviews point at a specific rule, every rule also carries a stable ID in an invisible comment under its
+heading (`<!-- rule: XX -->`). [RULE_FORMAT](RULE_FORMAT.md) describes how to write a rule.
 
 ---
 
