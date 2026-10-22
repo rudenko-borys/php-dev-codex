@@ -24,7 +24,3 @@ php bin/check-sync.php
 ```
 
 Must print `OK`. It checks IDs, duplicates, the table of contents, and README ↔ agent parity.
-
-## Not part of the repo
-
-`BOOK.md` and the Clean Code PDF are local working notes (untracked, PDF is gitignored). Don't commit them.
