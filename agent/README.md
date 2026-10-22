@@ -8,7 +8,7 @@ matching paths.
 
 | Path | Purpose | Loaded |
 |------|---------|--------|
-| `CLAUDE.md` | Template for a project's root `CLAUDE.md`: stack, commands, hard constraints, finish checklist | every session |
+| `CLAUDE.md` | Template for a project's root `CLAUDE.md`: stack, pointer to the rules, five hard constraints, finish checklist | every session |
 | `rules/php-core.md` | Types, control flow, parameters, strings, classes, enums, exceptions, comments | every session |
 | `rules/naming.md` | General, type, method, event naming | every session |
 | `rules/architecture.md` | Layers, directory tree, models, repositories, services, DI | every session |

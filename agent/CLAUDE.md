@@ -1,25 +1,14 @@
 # <Project name>
 
-<!-- Template from php-dev-codex/agent/CLAUDE.md. Replace placeholders, keep it under ~80 lines. HTML comments are stripped before Claude sees the file. -->
+<!-- Template from php-dev-codex/agent/CLAUDE.md: copy to the root of a PHP project and replace the placeholders. Add the project's own commands and environment notes below; keep the whole file under 200 lines. -->
 
 <One sentence: what this application does.>
 
 ## Stack
 
 - PHP 8.5, Symfony 7.4 LTS, Doctrine ORM, PHPUnit 13, PHPStan 2 at level `max`.
-- Use current PHP syntax: `private(set)`, property hooks where a rule allows them, `new Foo()->bar()`,
-  `array_find()`/`array_any()`/`array_all()`, `clone($obj, [...])`. Don't write PHP 8.3-era workarounds for them.
-
-## Commands
-
-```bash
-composer install
-vendor/bin/phpunit                                   # all tests
-vendor/bin/phpunit --filter <TestClass>              # one test class
-vendor/bin/phpstan analyse                           # static analysis, must be clean
-vendor/bin/php-cs-fixer fix                          # code style, run before committing
-bin/console cache:clear
-```
+- Use current PHP syntax: `private(set)`, `new Foo()->bar()`, `array_find()`/`array_any()`/`array_all()`,
+  `clone($obj, [...])`. Don't write PHP 8.3-era workarounds for them.
 
 ## Code rules
 
@@ -34,16 +23,9 @@ Hard constraints, repeated here because they are violated most often:
 - No `empty()`, no `mixed`, no bare `array` without a PHPDoc shape (TC5, TC6).
 - Models are plain DTOs: no defaults, no logic (AD3, AD4).
 
-## Project specifics
-
-<!-- Only what Claude cannot derive from the code: env vars, services that must be running, gotchas. -->
-
-- <e.g. `DATABASE_URL` points to the dockerised Postgres; run `docker compose up -d` first.>
-- <e.g. Fixtures: `bin/console doctrine:fixtures:load --no-interaction`.>
-
 ## Before finishing a task
 
-1. `vendor/bin/php-cs-fixer fix` then `vendor/bin/phpstan analyse` — both clean.
-2. `vendor/bin/phpunit` — green; add or update tests for every behaviour change (see tests rules).
+1. Run the project's quality gate (code style, PHPStan, tests) and leave it green.
+2. Add or update tests for every behaviour change (see `.claude/rules/tests.md`).
 3. Check `use` statements of changed files for layer violations (AD1).
 4. Commit message: `<ISSUE-ID> <Imperative subject>` (GT2).
