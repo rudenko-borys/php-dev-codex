@@ -284,9 +284,8 @@ for new projects) with zero errors and zero new baseline entries. Resolve a repo
 
 1. Fix the code (add the missing type, the `null` check, the return type).
 2. If the untyped value comes from vendor code, narrow it with a real check that PHPStan understands:
-   `if (!$result instanceof Product) { throw new UnexpectedValueException(...); }` or
-   `assert($result instanceof Product);`. Fall back to `/** @var */` only when a check is impossible (see
-   [Follow commenting standards](#follow-commenting-standards)).
+   `if (!$result instanceof Product) { throw new UnexpectedValueException(...); }`. Fall back to `/** @var */`
+   only when a check is impossible (see [Follow commenting standards](#follow-commenting-standards)).
 3. If the vendor's own PHPDoc is wrong, add a stub (`phpstan/stubs/*.stub`) for that class instead of ignoring
    every call site.
 4. `@phpstan-ignore` is allowed only for a confirmed PHPStan or vendor bug, with the identifier and a link to the
@@ -306,9 +305,9 @@ for new projects) with zero errors and zero new baseline entries. Resolve a repo
 ### Prefer match expressions
 <!-- rule: CF1 -->
 
-Never use `switch`; use `match`. Unlike `switch`, `match` is an expression, uses strict comparison, and must handle
-every case: add a `default` arm unless the subject is an enum and every case is listed. Each arm is a single
-expression: when a branch needs statements or side effects, extract them into a method and call it from the arm.
+Use `match` instead of `switch` to simplify conditional logic and reduce the "cognitive load" required to read the code.
+Unlike the `switch` statement, which is used for executing blocks of code, `match` is an expression that returns a
+value.
 
 <table>
     <thead>
@@ -357,23 +356,10 @@ switch ($statusCode) {
 ```php
 $message = match ($statusCode) {
     200, 300 => null,
-    400 => $this->getBadRequestMessage(),
+    400 => $this->getErrorMessage(),
     500 => 'server error',
-    default => 'unknown status code',
+    default => 'unknown status code'
 };
-
-// ...
-
-private function getBadRequestMessage(): string
-{
-    $error = $this->getErrorMessage();
-
-    if ($error === null) {
-        $this->logger->error('bad request');
-    }
-
-    return $error ?? 'bad request';
-}
 ```
 
 </td>
@@ -382,8 +368,8 @@ private function getBadRequestMessage(): string
 </table>
 
 > **Why?** `match` compares strictly, returns a value instead of assigning in every branch, and throws
-> `UnhandledMatchError` for an unexpected subject instead of silently falling through. Because an arm can only hold
-> an expression, the branch logic is forced out into named methods instead of growing into a huge, obscure `switch`.
+> `UnhandledMatchError` for an unexpected subject instead of silently falling through, so a missing case cannot go
+> unnoticed.
 
 ### Avoid assignments in conditions
 <!-- rule: CF2 -->

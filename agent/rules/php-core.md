@@ -11,11 +11,11 @@ Stack: PHP 8.5, Symfony 7.4 LTS, PHPUnit 13, PHPStan 2. Use current syntax where
 - **TC4 Compare booleans directly**: `return $valid;` not `return $valid === true;`. Exception: non-bool values (`strpos(...) === false`).
 - **TC5 Check things explicitly**: never `empty()`. Use `$value === null`, `$array !== []`, `$string !== ''`, `$object !== null`, `count($countable) > 0`.
 - **TC6 Avoid mixed and untyped arrays**: no `mixed`; every `array` gets a PHPDoc shape (`list<T>`, `array<string, T>`, `array{...}`); a method that always throws returns `never`.
-- **TC7 Pass static analysis**: code passes PHPStan 2 at the project level (`max` = level 10 for new projects) with zero errors. Resolve in order: fix the code → narrow untyped vendor values with an `instanceof` check / `assert()` (`/** @var */` only when a check is impossible) → stub file for wrong vendor PHPDoc → `@phpstan-ignore` only for a confirmed PHPStan/vendor bug with identifier + issue link on the same line.
+- **TC7 Pass static analysis**: code passes PHPStan 2 at the project level (`max` = level 10 for new projects) with zero errors. Resolve in order: fix the code → narrow untyped vendor values with `if (!$value instanceof T) { throw ...; }` (`/** @var */` only when a check is impossible) → stub file for wrong vendor PHPDoc → `@phpstan-ignore` only for a confirmed PHPStan/vendor bug with identifier + issue link on the same line.
 
 ## Control flow
 
-- **CF1 Prefer match expressions**: never `switch`, always `match`. Add `default` unless matching an enum exhaustively. One expression per arm; a branch with statements or side effects becomes a private method called from the arm. Converting `switch` to `match` must keep every side effect.
+- **CF1 Prefer match expressions**: `match` instead of `switch`; `match` is an expression returning a value, strict comparison, throws `UnhandledMatchError` on unexpected subject. Add `default` unless matching an enum exhaustively. One expression per arm; a branch with statements becomes a method called from the arm.
 - **CF2 Avoid assignments in conditions**: assign on its own line, then test. Exception: `while` condition.
 - **CF3 Avoid unnecessary nesting**: `if ($first && $second)` instead of nested `if`s.
 - **CF4 Keep if statements simple**: value-only `if/else` → ternary or `match`; 3+ single-expression branches → `match (true)`; guard clauses return early; invert when the `if` body is longer than the `else`; never nest deeper than 2 levels, extract a method.
