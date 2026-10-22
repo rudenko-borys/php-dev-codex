@@ -268,7 +268,7 @@ return type of a method that always throws.
 |------------------------------------|---------------------------------------------------------|
 | `function handle(mixed $payload)`  | `function handle(OrderModel $payload)`                  |
 | `function ids(): array`            | `/** @return list<int> */ function ids(): array`        |
-| `function fail(string $m): void`   | `function fail(string $m): never`                       |
+| `function fail(string $message): void` | `function fail(string $message): never`             |
 
 **Exception:** `mixed` in a generic boundary that really accepts anything (a serializer, a cache adapter), documented
 with a PHPDoc that narrows it where possible.
@@ -280,26 +280,35 @@ with a PHPDoc that narrows it where possible.
 <!-- rule: TC7 -->
 
 Code must pass [PHPStan](https://phpstan.org) 2 at the level configured in the project (`max`, i.e. level `10`,
-for new projects) with zero errors and zero new baseline entries. Fix the code, not the analyser: don't add `@phpstan-ignore` or
-`/** @var */` casts to silence a real problem.
+for new projects) with zero errors and zero new baseline entries. Resolve a reported error in this order:
 
-| ❌ Wrong:                                          | ✅ Right:                                    |
-|---------------------------------------------------|---------------------------------------------|
-| `/** @phpstan-ignore-next-line */ $x->foo();`     | `if ($x !== null) { $x->foo(); }`           |
-| `/** @var Product $product */ $product = $mixed;` | `$product = $this->manager->get($id);`      |
+1. Fix the code (add the missing type, the `null` check, the return type).
+2. If the untyped value comes from vendor code, narrow it with a real check that PHPStan understands:
+   `if (!$result instanceof Product) { throw new UnexpectedValueException(...); }` or
+   `assert($result instanceof Product);`. Fall back to `/** @var */` only when a check is impossible (see
+   [Follow commenting standards](#follow-commenting-standards)).
+3. If the vendor's own PHPDoc is wrong, add a stub (`phpstan/stubs/*.stub`) for that class instead of ignoring
+   every call site.
+4. `@phpstan-ignore` is allowed only for a confirmed PHPStan or vendor bug, with the identifier and a link to the
+   issue on the same line: `// @phpstan-ignore method.notFound (https://github.com/phpstan/phpstan/issues/1234)`.
+
+| ❌ Wrong:                                                    | ✅ Right:                                                       |
+|-------------------------------------------------------------|----------------------------------------------------------------|
+| `/** @phpstan-ignore-next-line */ $order->ship();`          | `if ($order !== null) { $order->ship(); }`                      |
+| `/** @var Product $product */ $product = $client->fetch();` | `$product = $client->fetch(); if (!$product instanceof Product) { throw ...; }` |
 
 > **Why?** The analyser is the only reviewer that checks every call site on every change. A suppressed error is a
-> bug with a comment on it.
+> bug with a comment on it, while a runtime check narrows the type for PHPStan and protects production at the same
+> time.
 
 ## Control flow
 
 ### Prefer match expressions
 <!-- rule: CF1 -->
 
-Use `match` instead of `switch` when every branch produces a value. Unlike `switch`, `match` is an expression, uses
-strict comparison, and must handle every case: add a `default` arm unless the subject is an enum and every case is
-listed. Keep each arm a single expression; if a branch needs statements or side effects, extract them into a method
-and call it from the arm.
+Never use `switch`; use `match`. Unlike `switch`, `match` is an expression, uses strict comparison, and must handle
+every case: add a `default` arm unless the subject is an enum and every case is listed. Each arm is a single
+expression: when a branch needs statements or side effects, extract them into a method and call it from the arm.
 
 <table>
     <thead>
@@ -320,7 +329,15 @@ switch ($statusCode) {
 
         break;
     case 400:
-        $message = $this->getErrorMessage() ?? 'bad request';
+        $error = $this->getErrorMessage();
+
+        if ($error !== null) {
+            $message = $error;
+        } else {
+            $message = 'bad request';
+
+            $this->logger->error('bad request');
+        }
 
         break;
     case 500:
@@ -340,10 +357,23 @@ switch ($statusCode) {
 ```php
 $message = match ($statusCode) {
     200, 300 => null,
-    400 => $this->getErrorMessage() ?? 'bad request',
+    400 => $this->getBadRequestMessage(),
     500 => 'server error',
     default => 'unknown status code',
 };
+
+// ...
+
+private function getBadRequestMessage(): string
+{
+    $error = $this->getErrorMessage();
+
+    if ($error === null) {
+        $this->logger->error('bad request');
+    }
+
+    return $error ?? 'bad request';
+}
 ```
 
 </td>
@@ -352,8 +382,8 @@ $message = match ($statusCode) {
 </table>
 
 > **Why?** `match` compares strictly, returns a value instead of assigning in every branch, and throws
-> `UnhandledMatchError` for an unexpected subject instead of silently falling through, so a missing case cannot go
-> unnoticed.
+> `UnhandledMatchError` for an unexpected subject instead of silently falling through. Because an arm can only hold
+> an expression, the branch logic is forced out into named methods instead of growing into a huge, obscure `switch`.
 
 ### Avoid assignments in conditions
 <!-- rule: CF2 -->
@@ -731,8 +761,9 @@ function createUser(CreateUserModel $model): User {
 </table>
 
 **Exception:** constructors that receive injected dependencies through promoted properties. Don't wrap dependencies
-into a holder object; if a constructor needs more than five dependencies, split the class instead (see
-[Composite service](#composite-service)).
+into a holder object. A specific service with more than five dependencies is doing too much and must be split; a
+[composite service](#composite-service) is exempt from that limit, because its only job is to hold the specific
+services it delegates to.
 
 > **Why?** Every parameter is one more thing the caller must order and remember. A named object turns the list into
 > a documented structure, and the limit keeps the signature readable at the call site.
@@ -840,8 +871,8 @@ when there are more than two modes.
 
 | ❌ Wrong:                                      | ✅ Right:                                              |
 |-----------------------------------------------|-------------------------------------------------------|
-| `render(Template $t, bool $asPdf)`            | `renderHtml(Template $t)` / `renderPdf(Template $t)`  |
-| `export(Report $r, bool $compressed)`         | `export(Report $r, ExportFormatEnum $format)`         |
+| `render(Template $template, bool $asPdf)`     | `renderHtml(Template $template)` / `renderPdf(Template $template)` |
+| `export(Report $report, bool $compressed)`    | `export(Report $report, ExportFormatEnum $format)`    |
 
 **Exception:** a boolean that is data, not a mode (`active: true` in a create model), passed as a named argument.
 
@@ -1278,7 +1309,7 @@ Never both.
 
 | ❌ Wrong:                                        | ✅ Right:                                                  |
 |-------------------------------------------------|-----------------------------------------------------------|
-| `function activate(User $u): bool` (saves, returns success) | `function activate(User $u): void` (throws on failure) |
+| `function activate(User $user): bool` (saves, returns success) | `function activate(User $user): void` (throws on failure) |
 | `function getOrCreate(string $key): Item`       | `find(string $key): ?Item` + `create(string $key): Item`  |
 
 **Exception:** `create()` methods return the created entity, because the caller needs the generated identifier. This
@@ -2680,7 +2711,7 @@ Pass every dependency as a constructor argument typed against the `Domain` inter
 | ❌ Wrong:                                         | ✅ Right:                                       |
 |--------------------------------------------------|------------------------------------------------|
 | `$this->container->get(ProductManager::class)`   | `private ProductManagerInterface $manager`     |
-| `public function setLogger(LoggerInterface $l)`  | `private LoggerInterface $logger` in constructor |
+| `public function setLogger(LoggerInterface $logger)` | `private LoggerInterface $logger` in constructor |
 | `$mailer = new SmtpMailer($dsn);`                | `private MailerInterface $mailer`              |
 
 > **Why?** A constructor signature is the complete, type-checked list of what a class needs. Anything else hides a

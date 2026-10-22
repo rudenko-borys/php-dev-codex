@@ -11,20 +11,20 @@ Stack: PHP 8.5, Symfony 7.4 LTS, PHPUnit 13, PHPStan 2. Use current syntax where
 - **TC4 Compare booleans directly**: `return $valid;` not `return $valid === true;`. Exception: non-bool values (`strpos(...) === false`).
 - **TC5 Check things explicitly**: never `empty()`. Use `$value === null`, `$array !== []`, `$string !== ''`, `$object !== null`, `count($countable) > 0`.
 - **TC6 Avoid mixed and untyped arrays**: no `mixed`; every `array` gets a PHPDoc shape (`list<T>`, `array<string, T>`, `array{...}`); a method that always throws returns `never`.
-- **TC7 Pass static analysis**: code passes PHPStan 2 at the project level (`max` = level 10 for new projects) with zero errors. Fix the code, never add `@phpstan-ignore` or `/** @var */` casts to silence a real problem.
+- **TC7 Pass static analysis**: code passes PHPStan 2 at the project level (`max` = level 10 for new projects) with zero errors. Resolve in order: fix the code → narrow untyped vendor values with an `instanceof` check / `assert()` (`/** @var */` only when a check is impossible) → stub file for wrong vendor PHPDoc → `@phpstan-ignore` only for a confirmed PHPStan/vendor bug with identifier + issue link on the same line.
 
 ## Control flow
 
-- **CF1 Prefer match expressions**: `match` over `switch` when branches produce a value. Add `default` unless matching an enum exhaustively. One expression per arm; extract a method if a branch needs statements. Converting `switch` to `match` must keep every side effect.
+- **CF1 Prefer match expressions**: never `switch`, always `match`. Add `default` unless matching an enum exhaustively. One expression per arm; a branch with statements or side effects becomes a private method called from the arm. Converting `switch` to `match` must keep every side effect.
 - **CF2 Avoid assignments in conditions**: assign on its own line, then test. Exception: `while` condition.
-- **CF3 Avoid unnecessary nesting**: `if ($a && $b)` instead of nested `if`s.
+- **CF3 Avoid unnecessary nesting**: `if ($first && $second)` instead of nested `if`s.
 - **CF4 Keep if statements simple**: value-only `if/else` → ternary or `match`; 3+ single-expression branches → `match (true)`; guard clauses return early; invert when the `if` body is longer than the `else`; never nest deeper than 2 levels, extract a method.
 
 ## Variables and parameters
 
 - **VP1 Avoid unnecessary variables**: no `$result = ...; return $result;` and no `$found` flags in loops. Keep a variable only when it names a complex condition.
 - **VP2 Don't reuse variables for different states**: each transformation gets a new descriptive name (`$name`, `$fullName`, `$filteredFullName`).
-- **VP3 Reduce function parameters**: max 3 parameters; group more into a Model. Exception: constructors with promoted dependencies (split the class above 5).
+- **VP3 Reduce function parameters**: max 3 parameters; group more into a Model. Exception: constructors with promoted dependencies; a specific service with more than 5 dependencies is split, a composite service has no limit.
 - **VP4 Use named arguments**: required for multiline calls and for every boolean argument.
 - **VP5 Name numbers and complex regexes**: magic numbers and regexes become `self::` constants (`GRAMS_IN_KILOGRAM`, `E164_PHONE_PATTERN`).
 - **VP6 Avoid flag arguments**: no `bool` parameter that switches behaviour; split into two methods or pass an enum. Exception: a boolean that is data (`active: true`) passed as a named argument.
