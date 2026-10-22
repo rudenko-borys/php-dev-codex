@@ -14,10 +14,9 @@ matching paths.
 | `rules/git.md` | Branch, commit, PR conventions | every session |
 | `rules/presentation.md` | Routes, commands, handlers, boundary validation | when editing `Presentation/`, controllers, commands |
 | `rules/tests.md` | Test structure, naming, doubles, fixtures | when editing `tests/` |
-| `skills/codex-review/SKILL.md` | `/codex-review`: review a diff against the rules, report by rule ID | on demand |
 
 Always-on files total about 140 lines; the docs recommend keeping `CLAUDE.md` under 200 lines and moving
-everything else into `.claude/rules/` and skills, which is what this layout does.
+everything else into `.claude/rules/`, which is what this layout does.
 
 ## Install into a project
 
@@ -25,9 +24,8 @@ everything else into `.claude/rules/` and skills, which is what this layout does
 CODEX=/path/to/php-dev-codex          # this repository
 PROJECT=/path/to/your-project
 
-mkdir -p "$PROJECT/.claude/rules" "$PROJECT/.claude/skills"
+mkdir -p "$PROJECT/.claude/rules"
 cp "$CODEX"/agent/rules/*.md            "$PROJECT/.claude/rules/"
-cp -R "$CODEX"/agent/skills/codex-review "$PROJECT/.claude/skills/"
 ```
 
 Then add a pointer to the project's own `CLAUDE.md` so the rules are applied and cited:
