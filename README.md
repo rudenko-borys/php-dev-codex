@@ -1218,7 +1218,7 @@ entity). Prefer composition and interfaces over inheritance.
 ### Use constructor property promotion
 <!-- rule: CM6 -->
 
-Declare dependencies and value-object fields as promoted constructor properties. Don't duplicate a property
+Declare dependencies and constructor-initialised fields as promoted constructor properties. Don't duplicate a property
 declaration and an assignment in the constructor body.
 
 <table>
@@ -2791,11 +2791,11 @@ Never copy a test and change one literal.
 
 ```php
 #[DataProvider('provideInvalidEmails')]
-public function testConstructorRejectsInvalidEmail(string $email): void
+public function testValidateRejectsInvalidEmail(string $email): void
 {
     $this->expectException(InvalidEmailException::class);
 
-    new Email($email);
+    $this->validator->validate($email);
 }
 
 /** @return iterable<string, array{string}> */
@@ -2818,7 +2818,7 @@ event dispatcher. Use real instances of models, enums, and pure services. Prefer
 | ❌ Wrong:                                                | ✅ Right:                                      |
 |---------------------------------------------------------|-----------------------------------------------|
 | `$this->createMock(ProductCreateModel::class)`          | `new ProductCreateModel()` with properties set |
-| `$this->createMock(Email::class)`                       | `new Email('user@example.com')`               |
+| `$this->createMock(UserCreatedEvent::class)`            | `new UserCreatedEvent($user)`                 |
 | mock of a pure `PriceCalculator`                        | the real `PriceCalculator`                    |
 
 > **Why?** A mock of a value or a pure class tests the mock's configuration instead of the code, and breaks on every
@@ -2836,7 +2836,7 @@ instead of repeating constructor calls or array literals in every test. One buil
 ### Use intent-revealing test data
 <!-- rule: TS8 -->
 
-Choose values that say why they were chosen: `'user@example.com'`, `'expired-token'`, `Money::fromCents(10_00)`.
+Choose values that say why they were chosen: `'user@example.com'`, `'expired-token'`, `self::MISSING_PRODUCT_ID`.
 Never copy production records, real names, or real identifiers into tests.
 
 | ❌ Wrong:                               | ✅ Right:                                  |
