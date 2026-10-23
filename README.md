@@ -62,7 +62,6 @@ heading (`<!-- rule: XX -->`). [RULE_FORMAT](RULE_FORMAT.md) describes how to wr
     * [Separate commands from queries](#separate-commands-from-queries)
     * [Inject the clock](#inject-the-clock)
     * [Use attributes instead of annotations](#use-attributes-instead-of-annotations)
-    * [Use value objects for validated primitives](#use-value-objects-for-validated-primitives)
     * [Chain on new without extra parentheses](#chain-on-new-without-extra-parentheses)
 - [Enums](#enums)
     * [Use backed enums for persisted values](#use-backed-enums-for-persisted-values)
@@ -1334,67 +1333,6 @@ Configure routes, Doctrine mappings, validation, and serialization with PHP 8 at
 > **Why?** Attributes are real PHP syntax: the parser, the IDE, and static analysis validate them, while an
 > annotation is a string that fails at runtime.
 
-### Use value objects for validated primitives
-<!-- rule: CM11 -->
-
-When a primitive has rules (an email, a money amount, a percentage, an identifier format), wrap it in a `final
-readonly` value object that validates in its constructor. Pass the object, not the `string` or `int`, through the
-`Domain` and `Application` layers.
-
-<table>
-    <thead>
-        <tr>
-            <th>❌ Wrong</th>
-            <th>✅ Right</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td>
-
-```php
-function invite(string $email): void
-{
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        throw new InvalidEmailException($email);
-    }
-    // ...
-}
-```
-
-</td>
-<td>
-
-```php
-final readonly class Email
-{
-    public function __construct(public string $value)
-    {
-        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidEmailException($value);
-        }
-    }
-}
-
-function invite(Email $email): void
-{
-    // ...
-}
-```
-
-</td>
-        </tr>
-    </tbody>
-</table>
-
-A value object is not a Model[^1]: it has no setters, is immutable, and its only logic is validation and
-derived accessors. A modified copy comes from a `with*()` method that uses `clone()` with property overrides
-(`return clone($this, ['value' => $value]);`), which re-runs nothing and keeps the original untouched. Models
-still hold plain properties and are filled by services.
-
-> **Why?** The check runs once, in one place, and the type guarantees it. Every method that receives an `Email`
-> knows it is valid without re-validating.
-
 ### Chain on new without extra parentheses
 <!-- rule: CM12 -->
 
@@ -1900,7 +1838,7 @@ Constant and enum case names must be uppercase. Start the name with the shared p
 
 Use nouns for class names, following the kind of class:
 
-- **Entity / Model / Value object** - the bare domain noun: `Product`, `ProductCreateModel`, `Money`.
+- **Entity / Model** - the bare domain noun: `Product`, `ProductCreateModel`.
 - **Specific service** - the entity plus an `er` noun that names its single job: `ProductManager`,
   `ProductNormalizer`, `ProductProvider`, `ProductUpdater`, `ProductResolver`, `ProductRegistry`.
 - **Composite service** (the single entry point that delegates to specific services, see
@@ -2874,7 +2812,7 @@ public static function provideInvalidEmails(): iterable
 <!-- rule: TS6 -->
 
 Replace with a test double only what crosses a boundary: repositories, HTTP clients, the clock, the mailer, the
-event dispatcher. Use real instances of models, value objects, enums, and pure services. Prefer `createStub()` to
+event dispatcher. Use real instances of models, enums, and pure services. Prefer `createStub()` to
 `createMock()` unless the test is about the interaction itself.
 
 | ❌ Wrong:                                                | ✅ Right:                                      |

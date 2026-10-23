@@ -43,14 +43,13 @@ Stack: PHP 8.5, Symfony 7.4 LTS, PHPUnit 13, PHPStan 2. Use current syntax where
 - **CM1 Control scope via visibility**: `private` by default, `protected` only for subclass access, `public` only for external callers.
 - **CM2 Write small and understandable methods**: max 50 lines per method. Exception: declarative config (schemas, form layouts).
 - **CM3 Use immutable dates**: `DateTimeImmutable` only, never `DateTime`.
-- **CM4 Use readonly classes and properties**: services and value objects are `readonly`. Exception: classes with internal mutable state (cache, memoization) and Models filled from outside (readonly props can only be set inside the class). If only one property mutates, keep the class readonly and declare that property `public private(set)` instead.
+- **CM4 Use readonly classes and properties**: services are `readonly`. Exception: classes with internal mutable state (cache, memoization) and Models filled from outside (readonly props can only be set inside the class). If only one property mutates, keep the class readonly and declare that property `public private(set)` instead.
 - **CM5 Make classes final**: `final` on every class except `Abstract*` bases, Doctrine entities, and classes a framework subclasses.
 - **CM6 Use constructor property promotion**: dependencies and fields as promoted constructor properties; no separate declaration + assignment.
 - **CM7 Order class members**: constants → properties → constructor → public → protected → private; callee directly below its first caller.
 - **CM8 Separate commands from queries**: a method either mutates and returns `void`, or returns a value with no side effects. Exception: `create()` returns the created entity (in `Manager::create()` and in the composite service method that delegates to it); never return a nullable id or bool as a success signal.
 - **CM9 Inject the clock**: never `new DateTimeImmutable()`, `time()`, `date()` in services; inject `Psr\Clock\ClockInterface` and use `$this->clock->now()`. Exception: timestamps set inside Doctrine lifecycle callbacks in the entity, display-only console output. A `createdAt` set on a model in a service uses the clock.
 - **CM10 Use attributes instead of annotations**: `#[Route]`, `#[ORM\Column]`, `#[Assert\NotBlank]`; never `@Route` / `@ORM` docblocks.
-- **CM11 Use value objects for validated primitives**: email, money, percentage, formatted IDs are `final readonly` classes validating in the constructor; pass the object through Domain and Application. Value objects are not Models: immutable, no setters, no business logic beyond validation. Modified copies via `with*()` returning `clone($this, ['value' => $new])`.
 - **CM12 Chain on new without extra parentheses**: `new DateTimeImmutable()->format('Y')`, never `(new DateTimeImmutable())->format('Y')`; always keep the constructor `()`.
 
 ## Enums

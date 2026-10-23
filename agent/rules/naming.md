@@ -12,7 +12,7 @@ Always loaded. IDs match the human codex.
 
 ## Type naming
 
-- **TN1 Class naming**: entity/model/value object = bare noun (`Product`, `ProductCreateModel`, `Money`); specific service = entity + job `er` noun (`ProductManager`, `ProductNormalizer`, `ProductResolver`); composite service = entity + `Service` (`ProductService`). Never `Helper`, `Util`, `Logic`.
+- **TN1 Class naming**: entity/model = bare noun (`Product`, `ProductCreateModel`); specific service = entity + job `er` noun (`ProductManager`, `ProductNormalizer`, `ProductResolver`); composite service = entity + `Service` (`ProductService`). Never `Helper`, `Util`, `Logic`.
 - **TN2 Interface naming**: suffix `Interface`, always (`ContainerAwareInterface`).
 - **TN3 Abstract class naming**: prefix `Abstract` (`AbstractController`).
 - **TN4 Trait naming**: suffix `Trait`.
