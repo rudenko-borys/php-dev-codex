@@ -968,7 +968,7 @@ escape characters such as `\n`. Never embed variables directly in strings - use 
 ### Prefer sprintf for string concatenation
 <!-- rule: SF2 -->
 
-Use formatted templates (`sprintf`) instead of the `.` operator to build strings from values.
+Use formatted templates (`sprintf`) to ensure that data injection is explicit and easy to trace during debugging.
 
 <table>
     <thead>
@@ -982,10 +982,7 @@ Use formatted templates (`sprintf`) instead of the `.` operator to build strings
 <td>
 
 ```php
-$url = '/v1/templates/'
-    . $template->getTemplateFamily()->getId()
-    . '/ingredients?'
-    . http_build_query($queryParams);
+$url = '/v1/templates/' . $template->getTemplateFamily()->getId() . '/ingredients?' . http_build_query($queryParams);
 ```
 
 </td>
