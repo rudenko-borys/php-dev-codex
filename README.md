@@ -1875,8 +1875,7 @@ Constants are `UPPER_SNAKE_CASE` and start with the shared prefix, followed by t
 
 > **Why?** A shared prefix groups related constants visually and in auto-complete. An enum case is not a constant:
 > it is a typed singleton object of its enum, so it is named like a class, and the different casing shows at the
-> call site that `StatusEnum::Active` is an object while `self::LIMIT_MAX` is a scalar. `PascalCase` is also what the
-> PHP documentation, PER Coding Style, Symfony, and Laravel use.
+> call site that `StatusEnum::Active` is an object while `self::LIMIT_MAX` is a scalar.
 
 ## Type naming
 
