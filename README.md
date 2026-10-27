@@ -595,6 +595,22 @@ Avoid temporary variables when they don't clarify the code.
 <td>
 
 ```php
+/** @param list<int> $haystack */
+function contains(int $needle, array $haystack): bool
+{
+    $found = false;
+
+    foreach ($haystack as $item) {
+        if ($needle === $item) {
+            $found = true;
+
+            break;
+        }
+    }
+
+    return $found;
+}
+
 function getValue(): int
 {
     // ...
@@ -603,29 +619,23 @@ function getValue(): int
 
     return $value;
 }
-
-function isEditable(Product $product): bool
-{
-    $editable = !$product->isLocked();
-
-    return $editable;
-}
 ```
 
 </td>
 <td>
 
 ```php
+/** @param list<int> $haystack */
+function contains(int $needle, array $haystack): bool
+{
+    return in_array($needle, $haystack, strict: true);
+}
+
 function getValue(): int
 {
     // ...
 
     return $this->get();
-}
-
-function isEditable(Product $product): bool
-{
-    return !$product->isLocked();
 }
 ```
 
@@ -747,8 +757,6 @@ Use named arguments for:
 
 You can skip named arguments when the method can be called on a single line and has no boolean argument.
 
-**Exception:** variadic parameters (`sprintf`, `max`, `array_merge`) cannot be named; pass them positionally.
-
 <table>
     <thead>
         <tr>
@@ -779,6 +787,8 @@ $this->createUser(
         </tr>
     </tbody>
 </table>
+
+**Exception:** variadic parameters (`sprintf`, `max`, `array_merge`) cannot be named; pass them positionally.
 
 > **Why?** Named arguments document the meaning of each value at the call site, especially for booleans and long
 > argument lists.
@@ -900,11 +910,68 @@ function calculateTotals(Order $order): OrderTotals
 Use `?->` to call through a nullable value and `??` to supply a default, instead of nested `if` checks or the
 ternary with `isset`.
 
-| ❌ Wrong:                                                       | ✅ Right:                               |
-|----------------------------------------------------------------|----------------------------------------|
-| `$user !== null ? $user->getEmail() : null`                    | `$user?->getEmail()`                   |
-| `isset($options['limit']) ? $options['limit'] : 10`            | `$options['limit'] ?? 10`              |
-| `if ($order !== null) { $id = $order->getId(); } else { ... }` | `$id = $order?->getId() ?? self::NONE` |
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+$email = $user !== null ? $user->getEmail() : null;
+```
+
+</td>
+<td>
+
+```php
+$email = $user?->getEmail();
+```
+
+</td>
+        </tr>
+        <tr>
+<td>
+
+```php
+$limit = isset($options['limit']) ? $options['limit'] : 10;
+```
+
+</td>
+<td>
+
+```php
+$limit = $options['limit'] ?? 10;
+```
+
+</td>
+        </tr>
+        <tr>
+<td>
+
+```php
+if ($order !== null) {
+    $id = $order->getId();
+} else {
+    $id = self::NONE;
+}
+```
+
+</td>
+<td>
+
+```php
+$id = $order?->getId() ?? self::NONE;
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
 
 **Exception:** don't chain `?->` more than twice; a long nullable chain is a sign that the data should be fetched
 by a dedicated method instead.
@@ -917,11 +984,76 @@ by a dedicated method instead.
 Use `array_find()`, `array_find_key()`, `array_any()`, `array_all()`, `array_first()`, and `array_last()` instead of
 a `foreach` that searches and breaks, or `reset()`/`end()` tricks to reach the first or last element.
 
-| ❌ Wrong:                                                      | ✅ Right:                                                   |
-|---------------------------------------------------------------|------------------------------------------------------------|
-| `foreach ($items as $item) { if ($item->isActive()) { return $item; } } return null;` | `return array_find($items, static fn (Item $item) => $item->isActive());` |
-| `foreach ($orders as $order) { if ($order->isOverdue()) { return true; } } return false;` | `return array_any($orders, static fn (Order $order) => $order->isOverdue());` |
-| `$first = reset($rows);`                                      | `$first = array_first($rows);`                              |
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+foreach ($items as $item) {
+    if ($item->isActive()) {
+        return $item;
+    }
+}
+
+return null;
+```
+
+</td>
+<td>
+
+```php
+return array_find($items, static fn (Item $item) => $item->isActive());
+```
+
+</td>
+        </tr>
+        <tr>
+<td>
+
+```php
+foreach ($orders as $order) {
+    if ($order->isOverdue()) {
+        return true;
+    }
+}
+
+return false;
+```
+
+</td>
+<td>
+
+```php
+return array_any($orders, static fn (Order $order) => $order->isOverdue());
+```
+
+</td>
+        </tr>
+        <tr>
+<td>
+
+```php
+$first = reset($rows);
+```
+
+</td>
+<td>
+
+```php
+$first = array_first($rows);
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
 
 Use `in_array($needle, $haystack, strict: true)` for a plain membership test; `array_any` is for a predicate.
 
@@ -1088,7 +1220,7 @@ All date and time operations must utilize `DateTimeImmutable` instead of `DateTi
 <td>
 
 ```php
-$startedAt = DateTime::createFromImmutable($this->clock->now());
+$startedAt = new DateTime();
 
 $finishedAt = clone $startedAt;
 $finishedAt->modify('+1 day');
