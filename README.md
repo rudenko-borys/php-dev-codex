@@ -595,22 +595,6 @@ Avoid temporary variables when they don't clarify the code.
 <td>
 
 ```php
-/** @param list<int> $haystack */
-function contains(int $needle, array $haystack): bool
-{
-    $found = false;
-
-    foreach ($haystack as $item) {
-        if ($needle === $item) {
-            $found = true;
-
-            break;
-        }
-    }
-
-    return $found;
-}
-
 function getValue(): int
 {
     // ...
@@ -619,23 +603,29 @@ function getValue(): int
 
     return $value;
 }
+
+function isEditable(Product $product): bool
+{
+    $editable = !$product->isLocked();
+
+    return $editable;
+}
 ```
 
 </td>
 <td>
 
 ```php
-/** @param list<int> $haystack */
-function contains(int $needle, array $haystack): bool
-{
-    return in_array($needle, $haystack, strict: true);
-}
-
 function getValue(): int
 {
     // ...
 
     return $this->get();
+}
+
+function isEditable(Product $product): bool
+{
+    return !$product->isLocked();
 }
 ```
 
@@ -2600,7 +2590,7 @@ class UserUpdateModel
 
     public bool $active = true;
 
-    public ?UploadedFile $image = null;
+    public ?SplFileInfo $image = null;
 }
 ```
 
@@ -2614,7 +2604,7 @@ final class UserUpdateModel
 
     public bool $active;
 
-    public ?UploadedFile $image;
+    public ?SplFileInfo $image;
 }
 ```
 

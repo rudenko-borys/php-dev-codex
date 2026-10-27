@@ -22,7 +22,7 @@ Stack: PHP 8.5, Symfony 7.4 LTS, PHPUnit 13, PHPStan 2. Use current syntax where
 
 ## Variables and parameters
 
-- **VP1 Avoid unnecessary variables**: no `$result = ...; return $result;` and no `$found` flags in loops (`in_array(..., strict: true)` / VP9 functions instead). Keep a variable only when it names a complex condition.
+- **VP1 Avoid unnecessary variables**: no `$result = ...; return $result;` (search loops: see VP9). Keep a variable only when it names a complex condition.
 - **VP2 Don't reuse variables for different states**: each transformation gets a new descriptive name (`$name`, `$fullName`, `$filteredFullName`).
 - **VP3 Reduce function parameters**: max 3 parameters; group more into a Model. Exception: constructors with promoted dependencies; a specific service with more than 5 dependencies is split, a composite service has no limit.
 - **VP4 Use named arguments**: required for multiline calls and for every boolean argument. Exception: variadic parameters (`sprintf`, `max`, `array_merge`).
