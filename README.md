@@ -262,21 +262,20 @@ Apply this even when the variable can only ever hold one of the conflated values
 ### Avoid mixed and untyped arrays
 <!-- rule: TC6 -->
 
-Declare a precise type for every parameter, property, and return value. Never use `mixed`, and never use a bare
-`array` without a PHPDoc shape (`list<T>`, `array<string, T>`, `array{id: int, name: string}`). Use `never` as the
-return type of a method that always throws.
+Declare a precise type for every parameter, property, and return value. Never use `mixed`. Use `never` as the
+return type of a method that always throws. A bare `array` is not a precise type either: give it an element type in
+PHPDoc, see [Document array element types with PHPDoc](#document-array-element-types-with-phpdoc).
 
 | ❌ Wrong:                           | ✅ Right:                                                |
 |------------------------------------|---------------------------------------------------------|
 | `function handle(mixed $payload)`  | `function handle(OrderModel $payload)`                  |
-| `function ids(): array`            | `/** @return list<int> */ function ids(): array`        |
 | `function fail(string $message): void` | `function fail(string $message): never`             |
 
 **Exception:** `mixed` in a generic boundary that really accepts anything (a serializer, a cache adapter), documented
 with a PHPDoc that narrows it where possible.
 
-> **Why?** Static analysis can only verify what is declared. `mixed` and shapeless arrays turn every consumer into a
-> guess and hide type errors until runtime.
+> **Why?** Static analysis can only verify what is declared. `mixed` turns every consumer into a guess and hides
+> type errors until runtime.
 
 ### Pass static analysis
 <!-- rule: TC7 -->
@@ -358,7 +357,7 @@ switch ($statusCode) {
 ```php
 $message = match ($statusCode) {
     200, 300 => null,
-    400 => $this->getErrorMessage(),
+    400 => $this->getBadRequestMessage(),
     500 => 'server error',
     default => 'unknown status code',
 };

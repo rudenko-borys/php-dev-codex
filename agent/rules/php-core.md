@@ -10,7 +10,7 @@ Stack: PHP 8.5, Symfony 7.4 LTS, PHPUnit 13, PHPStan 2. Use current syntax where
 - **TC3 Comparison order**: variable on the left, constant on the right: `$value === null`, never `null === $value`.
 - **TC4 Compare booleans directly**: `return $valid;` not `return $valid === true;`. Exception: non-bool values (`strpos(...) === false`).
 - **TC5 Check things explicitly**: never `empty()`. Use `$value === null`, `$array !== []`, `$string !== ''`, `$object !== null`, `count($countable) > 0`.
-- **TC6 Avoid mixed and untyped arrays**: no `mixed`; every `array` gets a PHPDoc shape (`list<T>`, `array<string, T>`, `array{...}`); a method that always throws returns `never`.
+- **TC6 Avoid mixed and untyped arrays**: no `mixed`; a method that always throws returns `never`; bare `array` needs an element-type PHPDoc (CO2).
 - **TC7 Pass static analysis**: code passes PHPStan 2 at the project level (`max` = level 10 for new projects) with zero errors. Resolve in order: fix the code → narrow untyped vendor values with `if (!$value instanceof T) { throw ...; }` (`/** @var */` only when a check is impossible) → stub file for wrong vendor PHPDoc → `@phpstan-ignore` only for a confirmed PHPStan/vendor bug with identifier + issue link on the same line.
 
 ## Control flow
@@ -69,7 +69,7 @@ Stack: PHP 8.5, Symfony 7.4 LTS, PHPUnit 13, PHPStan 2. Use current syntax where
 ## Comments
 
 - **CO1 Eliminate redundant PHPDoc**: no `@param`/`@return` that repeats the native type.
-- **CO2 Document array element types with PHPDoc**: `@return Collection<int, Product>`, `@param list<int> $ids`, `array{id: int}` shapes.
+- **CO2 Document array element types with PHPDoc**: every `array`/`Collection` parameter, property, and return gets a PHPDoc: `list<T>` for sequential, `array<K, V>` for maps, `array{id: int}` shapes for fixed keys, `Collection<int, Product>`.
 - **CO3 Follow commenting standards**: `/** */` for class/method/property docs and inline `/** @var */` for untyped vendor values; `//` for single lines; never `/* */` or `#`; never commented-out code.
 - **CO4 Refactor instead of explaining**: a comment that explains *how* becomes a well-named method (`isProductManager($user)`).
 - **CO5 Don't commit TODO comments**: no `TODO`/`FIXME`/`XXX`; do it now or open an issue.
