@@ -8,7 +8,7 @@ Always loaded. IDs match the human codex.
 - **GN2 Avoid uppercased abbreviations**: `getGpsSql()`, `$userId`, `ApiClient`; never `getGPSSQL()`, `$userID`, `APIClient`.
 - **GN3 Context duplication in naming**: drop the entity prefix, keep the role: inside `FileCategoryService` the property is `$manager`, not `$fileCategoryManager`; inside `OrderService` it is `$repository`, not `$orderRepository`; inside `LoadManagerInterface` the method is `create()`, not `createLoad()`.
 - **GN4 Avoid double plural constructions**: `$driverLoads`, not `$driversLoads`; pluralise only the last noun.
-- **GN5 Name constants and enums consistently**: UPPERCASE, shared prefix first: `STATUS_SUCCEEDED`, `STATUS_FAILED`.
+- **GN5 Name constants and enums consistently**: constants `UPPER_SNAKE_CASE`, shared prefix first (`LIMIT_DEFAULT`, `LIMIT_MAX`); enum cases `PascalCase` (`case Active`, `case InProgress`), never `case ACTIVE`.
 
 ## Type naming
 

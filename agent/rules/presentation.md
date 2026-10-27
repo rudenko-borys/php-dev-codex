@@ -23,6 +23,6 @@ Loaded when editing controllers, commands, handlers, routes. IDs match the human
 
 ## Boundary duties (see architecture rules)
 
-- Convert raw strings to enums here with `tryFrom()`; `null` is a validation error (EN2).
+- Enums come from the framework mapping (enum-typed Model property, `EnumType`, `EnumRequirement`); `tryFrom()` only for console arguments and vendor payloads, `null` is a validation error (EN2).
 - Map request/CLI input into a Model and validate it here; services receive valid Models (AD10).
 - Controllers and handlers inject the composite `*Service`, never a `*Manager` or repository directly (AD6).

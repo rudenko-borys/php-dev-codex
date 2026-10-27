@@ -1352,30 +1352,40 @@ constructor call in parentheses, and always keep the constructor's own parenthes
 ### Use backed enums for persisted values
 <!-- rule: EN1 -->
 
-Any value stored in a database, sent over an API, or read from configuration must be a backed enum
-(`enum StatusEnum: string`). Use a string backing unless the value is numeric by nature.
+Any value stored in a database, sent over an API, or read from configuration must be a backed enum. Choose the
+backing type per enum: `string` when people or external systems read the value (API payloads, logs, configuration,
+raw SQL), `int` when the value is numeric by nature (priority, level) or the column sits in a hot path where index
+size matters. In both cases the enum is the single map between the case name and the stored value.
 
 | ❌ Wrong:                                   | ✅ Right:                                                  |
 |--------------------------------------------|-----------------------------------------------------------|
 | `public const STATUS_ACTIVE = 'active';`   | `enum StatusEnum: string { case Active = 'active'; }`     |
 | `enum StatusEnum { case Active; }` (stored) | `enum StatusEnum: string { case Active = 'active'; }`     |
+| `public const PRIORITY_HIGH = 3;`          | `enum PriorityEnum: int { case High = 3; }`               |
 
 > **Why?** A backed enum is both a closed set the type system checks and a stable external representation.
-> Constants give you neither.
+> Constants give you neither. A `string` value stays readable outside the code; an `int` value is smaller and
+> faster to index but means nothing without the enum, so it is reserved for the cases where that cost pays off.
 
 ### Convert enums at the boundaries
 <!-- rule: EN2 -->
 
-Turn raw input into an enum with `tryFrom()` in the `Presentation` layer and treat `null` as a validation error.
-Inside the application, pass the enum, never its string value. Match on enums exhaustively, without `default`.
+Let the framework turn raw input into the enum at the entrypoint: an enum-typed property on the request Model
+mapped with `#[MapRequestPayload]` / `#[MapQueryString]`, `EnumType` in forms, `EnumRequirement` in routes (in
+Laravel: enum casts and the `Enum` validation rule). Call `tryFrom()` yourself only where no mapping exists (console
+arguments, third-party payloads) and treat `null` as a validation error. Inside the application pass the enum, never
+its backing value. Match on enums exhaustively, without `default`.
 
 | ❌ Wrong:                                              | ✅ Right:                                                    |
 |-------------------------------------------------------|-------------------------------------------------------------|
-| `$this->service->update($id, $request->get('status'))` | `$status = StatusEnum::tryFrom($raw) ?? throw new ...;`    |
+| `$this->service->update($id, $request->get('status'))` | `public StatusEnum $status;` on the request Model, mapped by `#[MapRequestPayload]` |
+| `$this->service->update($id, $input->getArgument('status'))` | `StatusEnum::tryFrom($input->getArgument('status')) ?? throw new InvalidArgumentException(...)` |
+| `$this->repository->findByStatus($status->value)`     | `$this->repository->findByStatus($status)`                  |
 | `match ($status) { ..., default => '' }`               | `match ($status) { StatusEnum::Active => ..., StatusEnum::Archived => ... }` |
 
-> **Why?** Converting once at the edge means every inner method receives a valid case. An exhaustive `match` makes
-> adding a case a compile-time to-do list (static analysis reports every unhandled match).
+> **Why?** Converting once at the edge means every inner method receives a valid case, and the framework already
+> reports a wrong value as a validation error. An exhaustive `match` makes adding a case a compile-time to-do list
+> (static analysis reports every unhandled match).
 
 ## Exceptions
 
@@ -1701,7 +1711,7 @@ Prefer code refactoring over lazy commenting to explain its behavior. Code that 
 ```php
 // Check if the user is a product manager
 if (
-    $user->getRole() === Role::MANAGER
+    $user->getRole() === RoleEnum::Manager
     && $user->hasSpecialAccess()
     && $user->isAllowedToManageProducts()
     && $user->isActive()
@@ -1854,14 +1864,19 @@ Don't pluralize both parts of a compound name. Pluralize only the trailing noun.
 ### Name constants and enums consistently
 <!-- rule: GN5 -->
 
-Constant and enum case names must be uppercase. Start the name with the shared prefix, followed by the specific part.
+Constants are `UPPER_SNAKE_CASE` and start with the shared prefix, followed by the specific part. Enum cases are
+`PascalCase`, like class names.
 
-| ❌ Wrong:           | ✅ Right:           |
-|--------------------|--------------------|
-| `SUCCEEDED_STATUS` | `STATUS_SUCCEEDED` |
-| `FAILED_STATUS`    | `STATUS_FAILED`    |
+| ❌ Wrong:                      | ✅ Right:                      |
+|-------------------------------|-------------------------------|
+| `DEFAULT_LIMIT`, `MAX_LIMIT`  | `LIMIT_DEFAULT`, `LIMIT_MAX`  |
+| `case ACTIVE = 'active';`     | `case Active = 'active';`     |
+| `case in_progress;`           | `case InProgress;`            |
 
-> **Why?** Shared prefixes group related constants visually, making them easier to scan and auto-complete.
+> **Why?** A shared prefix groups related constants visually and in auto-complete. An enum case is not a constant:
+> it is a typed singleton object of its enum, so it is named like a class, and the different casing shows at the
+> call site that `StatusEnum::Active` is an object while `self::LIMIT_MAX` is a scalar. `PascalCase` is also what the
+> PHP documentation, PER Coding Style, Symfony, and Laravel use.
 
 ## Type naming
 

@@ -54,8 +54,8 @@ Stack: PHP 8.5, Symfony 7.4 LTS, PHPUnit 13, PHPStan 2. Use current syntax where
 
 ## Enums
 
-- **EN1 Use backed enums for persisted values**: anything stored, sent, or configured is `enum XEnum: string` (int only when numeric by nature). Never string constants for closed sets.
-- **EN2 Convert enums at the boundaries**: `XEnum::tryFrom($raw)` in Presentation, `null` = validation error; inside the app pass the enum. `match` on an enum is exhaustive, no `default`.
+- **EN1 Use backed enums for persisted values**: anything stored, sent, or configured is a backed enum. `string` backing when people/external systems read the value; `int` when numeric by nature or the column is in a hot path. Never constants for closed sets.
+- **EN2 Convert enums at the boundaries**: let the framework map input to the enum (enum-typed Model property + `#[MapRequestPayload]`, `EnumType` form, `EnumRequirement` route); `tryFrom()` only where no mapping exists (console args, vendor payloads), `null` = validation error. Inside the app pass the enum, never `->value`. `match` on an enum is exhaustive, no `default`.
 
 ## Exceptions
 
