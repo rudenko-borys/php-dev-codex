@@ -13,7 +13,7 @@ Loaded when editing controllers, commands, handlers, routes. IDs match the human
 
 ## Routing
 
-- **RN1 Route path naming**: nouns, **singular** (`/v1/store/product`, never `/products`), lowercase, hyphens, no trailing slash, no extension, no verbs (`/GetProducts`), version prefix `/v1`.
+- **RN1 Route path naming**: nouns, **plural** collections with the item as collection + ID (`/v1/store/products`, `/v1/store/products/{id}`, never `/product/{id}`), lowercase, hyphens (`/template-families`), no trailing slash, no extension, no verbs (`/GetProducts`), version prefix `/v1`.
 - **RN2 HTTP methods for actions**: `GET` read, `POST` create/process, `PUT` full replace, `PATCH` partial update, `DELETE` remove. Return accurate status codes (2xx success, 4xx client error, 5xx server error).
 
 ## Symfony naming

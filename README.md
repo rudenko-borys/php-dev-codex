@@ -1328,7 +1328,7 @@ Configure routes, Doctrine mappings, validation, and serialization with PHP 8 at
 | ❌ Wrong:                                 | ✅ Right:                                      |
 |------------------------------------------|-----------------------------------------------|
 | `/** @ORM\Column(type="string") */`      | `#[ORM\Column(type: Types::STRING)]`          |
-| `/** @Route("/v1/product", methods={"GET"}) */` | `#[Route('/v1/product', methods: ['GET'])]` |
+| `/** @Route("/v1/products", methods={"GET"}) */` | `#[Route('/v1/products', methods: ['GET'])]` |
 
 > **Why?** Attributes are real PHP syntax: the parser, the IDE, and static analysis validate them, while an
 > annotation is a string that fails at runtime.
@@ -1844,8 +1844,9 @@ readonly class FileCategoryService
 The same applies to methods. For example, in `LoadManagerInterface` use `get()`, `create(LoadModel $model)` and
 `update(LoadModel $model)` instead of `getLoad()`, `createNewLoad()` and `updateLoadByModel()`.
 
-Drop only the entity prefix, keep the role: inside `OrderService` the repository is `$repository`, the manager is
-`$manager`, the clock is `$clock`.
+Drop only the prefix that repeats the class entity and keep the role: inside `OrderService` the
+`OrderRepositoryInterface` is `$repository` and the `OrderManagerInterface` is `$manager`, but a
+`UserRepositoryInterface` stays `$userRepository`, because `User` is not this class's context.
 
 > **Why?** The class already provides the context, so repeating it in members only adds noise and unnecessary line
 > breaks.
@@ -2141,7 +2142,8 @@ The subscriber must be named according to the action it will perform with the su
 <!-- rule: RN1 -->
 
 1. Use nouns
-2. Use singular nouns, for collections as well (`/product`, not `/products`)
+2. Use plural nouns for collections; a single item is the collection path plus its ID (`/products`,
+   `/products/{id}`)
 3. Use lowercase letters
 4. Use hyphens (`-`) instead of underscores (`_`)
 5. Don't use trailing forward slash
@@ -2149,20 +2151,21 @@ The subscriber must be named according to the action it will perform with the su
 7. Don't use CRUD function names
 8. Use versions
 
-| ❌ Wrong:                | ✅ Right:                   |
-|-------------------------|----------------------------|
-| `/store/GetProducts/`   | `/v1/store/product`        |
-| `/store/products.json`  | `/v1/store/product`        |
-| `/v1/store/products`    | `/v1/store/product`        |
-| `/template_Family/{ID}` | `/v1/template-family/{id}` |
-| `/templateFamily/{id}`  | `/v1/template-family/{id}` |
+| ❌ Wrong:                  | ✅ Right:                       |
+|---------------------------|--------------------------------|
+| `/store/GetProducts/`     | `/v1/store/products`           |
+| `/store/products.json`    | `/v1/store/products`           |
+| `/v1/store/product/{id}`  | `/v1/store/products/{id}`      |
+| `/template_Families/{ID}` | `/v1/template-families/{id}`   |
+| `/templateFamilies/{id}`  | `/v1/template-families/{id}`   |
 
 > **Why?** Nouns are used to specify the resource (**1**), the URIs shouldn't indicate any CRUD operations (**7**).
-> Singular nouns avoid irregular plurals (`/person` vs `/people`) and keep the collection and item paths identical
-> except for the ID (**2**). Lowercase letters often need to be used for SEO purposes, search engines are
-> case-sensitive (**3**). Hyphens improves the readability (**4**). A forward slash as last character adds no semantic
-> value (**5**). File extensions are unnecessary and add length and complexity (**6**). By versioning your APIs, you
-> can provide an upgrade path without making any fundamental changes to existing APIs (**8**).
+> Plural nouns are what every major API and routing tool expects, and they make the collection and the item differ
+> only by the ID (**2**). URL paths are case-sensitive, so `/Product` and `/product` are two different resources;
+> lowercase removes the ambiguity (**3**). Hyphens improve readability (**4**). A forward slash as last character
+> adds no semantic value (**5**). File extensions are unnecessary, the `Accept` header selects the format (**6**). By
+> versioning your APIs, you can provide an upgrade path without making any fundamental changes to existing APIs
+> (**8**).
 
 ### HTTP methods for actions
 <!-- rule: RN2 -->
