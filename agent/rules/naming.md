@@ -12,7 +12,7 @@ Always loaded. IDs match the human codex.
 
 ## Type naming
 
-- **TN1 Class naming**: entity/model = bare noun (`Product`, `ProductCreateModel`); specific service = entity + job `er` noun (`ProductManager`, `ProductNormalizer`, `ProductResolver`); composite service = entity + `Service` (`ProductService`). Never `Helper`, `Util`, `Logic`.
+- **TN1 Class naming**: entity = bare noun (`Product`), model = `<Entity><Action>Model` (`ProductCreateModel`, `UserUpdateModel`); specific service = entity + job `er` noun (`ProductManager`, `ProductNormalizer`, `ProductResolver`); composite service = entity + `Service` (`ProductService`). Never `Helper`, `Util`, `Logic`. Exception: commands and messages are verb phrases (SN1, SN2).
 - **TN2 Interface naming**: suffix `Interface`, always (`ContainerAwareInterface`).
 - **TN3 Abstract class naming**: prefix `Abstract` (`AbstractController`).
 - **TN4 Trait naming**: suffix `Trait`.
@@ -23,7 +23,7 @@ Always loaded. IDs match the human codex.
 
 - **MN1 Method naming**: verbs for actions; boolean methods start with `is`/`are`/`has`/`can`/`must`, have no side effects. Entities: `is`/`are` for bool getters, `get`, `set`, `add`, `remove`. Make a real English phrase: `areTaxesIncluded()`, `canBeChecked()`, never `getIsValid()`, `isNeedsChecking()`.
 - **MN2 Repository method naming**: public repository methods start with `find`, `count`, or `sum` only; single entity = `findOne`. Never `get*`/`save*` in a repository (responsibility rule: AD5).
-- **MN3 Filler and provider method naming**: fillers expose only `fill*` (`fill()`, `fillFromEntity()`), providers only `provide*` (`provideActive()`); never `create*`/`build*`/`get*`/`load*` there.
+- **MN3 Filler and provider method naming**: fillers expose only `fill*` (`fill()`, `fillFromEntity()`), providers only `provide*` (`provideActive()`); never `create*`/`build*`/`get*`/`load*` there; a filler takes the source and returns a new Model, never the Model to fill (VP7).
 - **MN4 Event naming**: past tense, `resource.action` string: `'user.created'`; one name per event class.
 - **MN5 Event class naming**: class = event name + `Event`: `UserCreatedEvent` with `NAME = 'user.created'`.
 - **MN6 Event subscriber naming**: named after the action it performs + `Subscriber`: `ResetPasswordSubscriber`, `SendWelcomeEmailSubscriber`; never after the event (`UserCreatedSubscriber`) or the entity (`UserSubscriber`).

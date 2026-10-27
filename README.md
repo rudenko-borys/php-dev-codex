@@ -230,7 +230,7 @@ Don't perform identity comparisons against `true` or `false` when a variable is 
 | ❌ Wrong:                   | ✅ Right:          |
 |----------------------------|-------------------|
 | `return $valid === true;`  | `return $valid;`  |
-| `return $valid !== false;` | `return !$valid;` |
+| `return $valid === false;` | `return !$valid;` |
 
 **Exception:** when a variable is not strictly `boolean`.
 
@@ -262,21 +262,20 @@ Apply this even when the variable can only ever hold one of the conflated values
 ### Avoid mixed and untyped arrays
 <!-- rule: TC6 -->
 
-Declare a precise type for every parameter, property, and return value. Never use `mixed`, and never use a bare
-`array` without a PHPDoc shape (`list<T>`, `array<string, T>`, `array{id: int, name: string}`). Use `never` as the
-return type of a method that always throws.
+Declare a precise type for every parameter, property, and return value. Never use `mixed`. Use `never` as the
+return type of a method that always throws. A bare `array` is not a precise type either: give it an element type in
+PHPDoc, see [Document array element types with PHPDoc](#document-array-element-types-with-phpdoc).
 
 | ❌ Wrong:                           | ✅ Right:                                                |
 |------------------------------------|---------------------------------------------------------|
 | `function handle(mixed $payload)`  | `function handle(OrderModel $payload)`                  |
-| `function ids(): array`            | `/** @return list<int> */ function ids(): array`        |
 | `function fail(string $message): void` | `function fail(string $message): never`             |
 
 **Exception:** `mixed` in a generic boundary that really accepts anything (a serializer, a cache adapter), documented
 with a PHPDoc that narrows it where possible.
 
-> **Why?** Static analysis can only verify what is declared. `mixed` and shapeless arrays turn every consumer into a
-> guess and hide type errors until runtime.
+> **Why?** Static analysis can only verify what is declared. `mixed` turns every consumer into a guess and hides
+> type errors until runtime.
 
 ### Pass static analysis
 <!-- rule: TC7 -->
@@ -358,9 +357,9 @@ switch ($statusCode) {
 ```php
 $message = match ($statusCode) {
     200, 300 => null,
-    400 => $this->getErrorMessage(),
+    400 => $this->getBadRequestMessage(),
     500 => 'server error',
-    default => 'unknown status code'
+    default => 'unknown status code',
 };
 ```
 
@@ -406,12 +405,7 @@ if (
 
 ```php
 $action = $process->getAction();
-
-if ($action === null) {
-    return [];
-}
-
-$result = $action->getResult();
+$result = $action?->getResult();
 
 if ($result !== null) {
     return $result->getData();
@@ -476,8 +470,8 @@ if ($first && $second) {
 Keep every `if` short and flat. Apply these in order:
 
 - Replace `if`/`else` that only picks a value with a ternary or a `match`.
-- Use `match (true)` instead of an `if`/`elseif` chain when there are three or more branches and every branch is a
-  single expression.
+- Use `match (true)` instead of an `if`/`elseif` chain when there are three or more branches; extract each branch
+  body into a method so that every arm is a single call.
 - Return early from guard clauses (`if (!$condition) { return ...; }`) instead of wrapping the rest of the method in
   the `if`.
 - Invert heavy blocks: when the `if` body is longer than its `else`, reverse the condition so the long path is the
@@ -538,7 +532,7 @@ if ($first) {
 match (true) {
     $first => $this->doFirst(),
     $second => $this->doSecond(),
-    default => $this->doDefault()
+    default => $this->doDefault(),
 };
 ```
 
@@ -600,21 +594,6 @@ Avoid temporary variables when they don't clarify the code.
 <td>
 
 ```php
-function find(int $needle, array $haystack): bool
-{
-    $found = false;
-
-    foreach ($haystack as $item) {
-        if ($needle === $item) {
-            $found = true;
-
-            break;
-        }
-    }
-
-    return $found;
-}
-
 function getValue(): int
 {
     // ...
@@ -623,28 +602,29 @@ function getValue(): int
 
     return $value;
 }
+
+function isEditable(Product $product): bool
+{
+    $editable = !$product->isLocked();
+
+    return $editable;
+}
 ```
 
 </td>
 <td>
 
 ```php
-function find(int $needle, array $haystack): bool
-{
-    foreach ($haystack as $item) {
-        if ($needle === $item) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 function getValue(): int
 {
     // ...
 
     return $this->get();
+}
+
+function isEditable(Product $product): bool
+{
+    return !$product->isLocked();
 }
 ```
 
@@ -738,7 +718,7 @@ function createUser(
 <td>
 
 ```php
-function createUser(CreateUserModel $model): User {
+function createUser(UserCreateModel $model): User {
     // ...
 }
 ```
@@ -796,6 +776,8 @@ $this->createUser(
         </tr>
     </tbody>
 </table>
+
+**Exception:** variadic parameters (`sprintf`, `max`, `array_merge`) cannot be named; pass them positionally.
 
 > **Why?** Named arguments document the meaning of each value at the call site, especially for booleans and long
 > argument lists.
@@ -862,7 +844,7 @@ when there are more than two modes.
 | `render(Template $template, bool $asPdf)`     | `renderHtml(Template $template)` / `renderPdf(Template $template)` |
 | `export(Report $report, bool $compressed)`    | `export(Report $report, ExportFormatEnum $format)`    |
 
-**Exception:** a boolean that is data, not a mode (`active: true` in a create model), passed as a named argument.
+**Exception:** a boolean that is data, not a mode (`active: true` as a field value), passed as a named argument.
 
 > **Why?** A flag means the method does two things. The caller has to read the implementation to learn which, and
 > every new flag doubles the paths to test.
@@ -917,11 +899,68 @@ function calculateTotals(Order $order): OrderTotals
 Use `?->` to call through a nullable value and `??` to supply a default, instead of nested `if` checks or the
 ternary with `isset`.
 
-| ❌ Wrong:                                                       | ✅ Right:                               |
-|----------------------------------------------------------------|----------------------------------------|
-| `$user !== null ? $user->getEmail() : null`                    | `$user?->getEmail()`                   |
-| `isset($options['limit']) ? $options['limit'] : 10`            | `$options['limit'] ?? 10`              |
-| `if ($order !== null) { $id = $order->getId(); } else { ... }` | `$id = $order?->getId() ?? self::NONE` |
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+$email = $user !== null ? $user->getEmail() : null;
+```
+
+</td>
+<td>
+
+```php
+$email = $user?->getEmail();
+```
+
+</td>
+        </tr>
+        <tr>
+<td>
+
+```php
+$limit = isset($options['limit']) ? $options['limit'] : 10;
+```
+
+</td>
+<td>
+
+```php
+$limit = $options['limit'] ?? 10;
+```
+
+</td>
+        </tr>
+        <tr>
+<td>
+
+```php
+if ($order !== null) {
+    $id = $order->getId();
+} else {
+    $id = self::NONE;
+}
+```
+
+</td>
+<td>
+
+```php
+$id = $order?->getId() ?? self::NONE;
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
 
 **Exception:** don't chain `?->` more than twice; a long nullable chain is a sign that the data should be fetched
 by a dedicated method instead.
@@ -934,11 +973,76 @@ by a dedicated method instead.
 Use `array_find()`, `array_find_key()`, `array_any()`, `array_all()`, `array_first()`, and `array_last()` instead of
 a `foreach` that searches and breaks, or `reset()`/`end()` tricks to reach the first or last element.
 
-| ❌ Wrong:                                                      | ✅ Right:                                                   |
-|---------------------------------------------------------------|------------------------------------------------------------|
-| `foreach ($items as $item) { if ($item->isActive()) { return $item; } } return null;` | `return array_find($items, static fn (Item $item) => $item->isActive());` |
-| `foreach ($ids as $id) { if ($id === $needle) { return true; } } return false;` | `return array_any($ids, static fn (int $id) => $id === $needle);` |
-| `$first = reset($rows);`                                      | `$first = array_first($rows);`                              |
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+foreach ($items as $item) {
+    if ($item->isActive()) {
+        return $item;
+    }
+}
+
+return null;
+```
+
+</td>
+<td>
+
+```php
+return array_find($items, static fn (Item $item) => $item->isActive());
+```
+
+</td>
+        </tr>
+        <tr>
+<td>
+
+```php
+foreach ($orders as $order) {
+    if ($order->isOverdue()) {
+        return true;
+    }
+}
+
+return false;
+```
+
+</td>
+<td>
+
+```php
+return array_any($orders, static fn (Order $order) => $order->isOverdue());
+```
+
+</td>
+        </tr>
+        <tr>
+<td>
+
+```php
+$first = reset($rows);
+```
+
+</td>
+<td>
+
+```php
+$first = array_first($rows);
+```
+
+</td>
+        </tr>
+    </tbody>
+</table>
 
 Use `in_array($needle, $haystack, strict: true)` for a plain membership test; `array_any` is for a predicate.
 
@@ -1115,7 +1219,7 @@ $finishedAt->modify('+1 day');
 <td>
 
 ```php
-$startedAt = new DateTimeImmutable();
+$startedAt = $this->clock->now();
 
 $finishedAt = $startedAt->modify('+1 day');
 ```
@@ -1145,30 +1249,30 @@ Prefer using `readonly` classes and properties.
 <td>
 
 ```php
-class UserModel
+final class Coordinates
 {
-    private string $name;
+    private float $latitude;
 
-    private string $email;
-    
-    public function getName(): string
+    private float $longitude;
+
+    public function getLatitude(): float
     {
-        return $this->name;
+        return $this->latitude;
     }
 
-    public function setName(string $name): void
+    public function setLatitude(float $latitude): void
     {
-        $this->name = $name;
-    }
-    
-    public function getEmail(): string
-    {
-        return $this->email;
+        $this->latitude = $latitude;
     }
 
-    public function setEmail(string $email): void
+    public function getLongitude(): float
     {
-        $this->email = $email;
+        return $this->longitude;
+    }
+
+    public function setLongitude(float $longitude): void
+    {
+        $this->longitude = $longitude;
     }
 }
 ```
@@ -1177,11 +1281,11 @@ class UserModel
 <td>
 
 ```php
-readonly class UserModel
+final readonly class Coordinates
 {
     public function __construct(
-        public string $name,
-        public string $email,
+        public float $latitude,
+        public float $longitude,
     ) {
     }
 }
@@ -1344,7 +1448,7 @@ constructor call in parentheses, and always keep the constructor's own parenthes
 
 | ❌ Wrong:                                   | ✅ Right:                               |
 |--------------------------------------------|----------------------------------------|
-| `(new DateTimeImmutable())->format('Y')`   | `new DateTimeImmutable()->format('Y')` |
+| `(new ArrayObject($items))->count()`       | `new ArrayObject($items)->count()`     |
 | `(new Builder)->withName($name)->build()`  | `new Builder()->withName($name)->build()` |
 
 > **Why?** Since PHP 8.4 the wrapping parentheses are noise, and the constructor parentheses keep `new Foo()` visually
@@ -1439,12 +1543,10 @@ try {
 ```php
 try {
     $this->someDeepMethod();
-} catch (EntityNotFoundException) {
-    return null;
+} catch (EntityNotFoundException $exception) {
+    throw new ProductNotFoundException('Product was not found.', previous: $exception);
 } catch (UnknownProductTypeException $exception) {
-    $this->productLogger->error($exception->getMessage());
-
-    return null;
+    throw new ProductImportException('Unknown product type.', previous: $exception);
 }
 ```
 
@@ -1611,9 +1713,9 @@ Don't add PHPDoc to methods that are already fully type-hinted.
 /**
  * @param string $email
  *
- * @return object
+ * @return Notification
  */
-function send(string $email): object {
+function send(string $email): Notification {
     // ...
 }
 ```
@@ -1622,7 +1724,7 @@ function send(string $email): object {
 <td>
 
 ```php
-function send(string $email): object {
+function send(string $email): Notification {
     // ...
 }
 ```
@@ -1815,11 +1917,11 @@ redundant context from members. This avoids unnecessary line breaks and improves
 <td>
 
 ```php
-readonly class FileCategoryService
+final readonly class FileCategoryService
 {
     public function __construct(
         private FileCategoryManagerInterface $fileCategoryManager,
-        private FileCategoryRepositoryInterface $fileCategoryRepository,
+        private FileCategorySynchronizer $fileCategorySynchronizer,
     ) {
     }
 }
@@ -1829,11 +1931,11 @@ readonly class FileCategoryService
 <td>
 
 ```php
-readonly class FileCategoryService
+final readonly class FileCategoryService
 {
     public function __construct(
         private FileCategoryManagerInterface $manager,
-        private FileCategoryRepositoryInterface $repository,
+        private FileCategorySynchronizer $synchronizer,
     ) {
     }
 }
@@ -1888,7 +1990,8 @@ Constants are `UPPER_SNAKE_CASE` and start with the shared prefix, followed by t
 
 Use nouns for class names, following the kind of class:
 
-- **Entity / Model** - the bare domain noun: `Product`, `ProductCreateModel`.
+- **Entity / Model** - the bare domain noun: `Product`; a Model is `<Entity><Action>Model`: `ProductCreateModel`,
+  `UserUpdateModel`.
 - **Specific service** - the entity plus an `er` noun that names its single job: `ProductManager`,
   `ProductNormalizer`, `ProductProvider`, `ProductUpdater`, `ProductResolver`, `ProductRegistry`.
 - **Composite service** (the single entry point that delegates to specific services, see
@@ -1899,6 +2002,10 @@ Use nouns for class names, following the kind of class:
 | `class ProductLogic`  | `class ProductService` |
 | `class SyncProducts`  | `class ProductSynchronizer` |
 | `class ProductHelper` | `class ProductPriceCalculator` |
+
+**Exception:** console commands and Messenger messages are verb phrases (`PullTemplatesImportCommand`,
+`SendInvoiceMessage`), see [Console command naming](#console-command-naming) and
+[Message handler naming](#message-handler-naming).
 
 > **Why?** A noun names the thing, and the `er` suffix communicates the job a service performs at a glance. Vague
 > suffixes like `Helper`, `Util`, or `Logic` hide what the class does.
@@ -2057,7 +2164,9 @@ be named `findOne`.
 ### Filler and provider method naming
 <!-- rule: MN3 -->
 
-Public filler methods must start with `fill` only. Public provider methods must start with `provide` only.
+Public filler methods must start with `fill` only. Public provider methods must start with `provide` only. A filler
+receives the source (entity, array, response) and returns a new Model; it never receives the Model to fill (see
+[Avoid output arguments](#avoid-output-arguments)).
 
 | ❌ Wrong:                                              | ✅ Right:                                                |
 |-------------------------------------------------------|---------------------------------------------------------|
@@ -2096,7 +2205,7 @@ class UserEvent extends Event
 <td>
 
 ```php
-class UserCreatedEvent extends Event
+final class UserCreatedEvent extends Event
 {
     public const NAME = 'user.created';
 }
@@ -2273,8 +2382,8 @@ Name commands `app:<domain>:<action>` in lowercase with hyphens, where `<domain>
 <!-- rule: SN2 -->
 
 Name a Messenger message after the thing that should happen (`SendInvoiceMessage`) and its handler after the message
-with the `Handler` suffix (`SendInvoiceHandler`). One handler per message; the handler only delegates to an
-`Application` service.
+with the `Handler` suffix (`SendInvoiceHandler`). One handler per message; the handler lives in `Presentation`
+(`Presentation/Messenger/Handler`) and only delegates to an `Application` service.
 
 | ❌ Wrong:                                     | ✅ Right:                                             |
 |----------------------------------------------|------------------------------------------------------|
@@ -2301,7 +2410,7 @@ We follow a Domain-Driven Design (DDD) approach with five layers:
 
 - **Application** - holds business and complex logic flows. It is a high-level layer called only from the
   `Presentation` layer, and it may call services from the `Domain` layer. Classes usually end in
-  `Service`/`Puller`/`Decider`/`Pusher`/`Handler`/`Processor`/`<anything>er`. Their goal is to trigger a chain of
+  `Service`/`Puller`/`Decider`/`Pusher`/`Processor`/`<anything>er`. Their goal is to trigger a chain of
   business-connected actions and act as an entrypoint for the `Presentation` layer.
 - **Domain** - holds `Models`/`Enums`/`Exceptions`/`Interfaces`. These classes know only the business aspects of the
   domain, nothing about the framework or specific tools. Service interfaces here (`*ManagerInterface`,
@@ -2315,6 +2424,7 @@ We follow a Domain-Driven Design (DDD) approach with five layers:
     - **Cli** - `Commands` and anything callable from the terminal.
     - **Ui** - `Controllers`/`Ui Services`/`Content Preparators`/`Frontend Resources`/`Datatables`/`Forms`/`Validators`.
     - **Api** - the API layer of the application.
+    - **Messenger** - message `Handlers`, each delegating to one `Application` service.
 
 Dependencies point inwards only. A class may `use` classes from its own layer or from a layer to the right of it:
 
@@ -2369,7 +2479,7 @@ domain:
 │   │       ├── 📄 ImportManager.php
 │   │       └── 📄 ImportHistoryFiller.php
 │   └── 📂 /Messenger
-│       └── 📂 /OpenSpout
+│       └── 📂 /Transport
 ├── 📂 /Framework
 │   ├── 📂 /CompilerPass
 │   ├── 📂 /EventSubscriber
@@ -2391,8 +2501,11 @@ domain:
     │   │   └── 📄 UiImportTemplatePreparator.php
     │   └── 📂 /DataTable
     │       └── 📄 ImportHistoryDataTable.php
-    └── 📂 /Api
-        └── 📂 /Controller
+    ├── 📂 /Api
+    │   └── 📂 /Controller
+    └── 📂 /Messenger
+        └── 📂 /Handler
+            └── 📄 SendImportReportHandler.php
 ```
 
 Classes shared between domains live in a `Platform` folder. Tool-specific models that never leave the
@@ -2415,7 +2528,7 @@ Classes shared between domains live in a `Platform` folder. Tool-specific models
 │   │   ├── 📂 /Repository
 │   │   │   └── 📄 DataProviderRepositoryInterface.php
 │   │   ├── 📂 /Service
-│   │   │   └── 📄 DataProviderService.php
+│   │   │   └── 📄 DataProviderManagerInterface.php
 │   │   └── 📂 /Strategy
 │   │       └── 📄 DataProviderPullStrategyInterface.php
 │   └── 📂 /Gps
@@ -2440,7 +2553,7 @@ Classes shared between domains live in a `Platform` folder. Tool-specific models
 └── 📂 /Presentation
     ├── 📂 /DataProvider
     │   └── 📂 /Cli
-    │       └── 📄 LatestPullCommand.php
+    │       └── 📄 PullLatestDataProviderCommand.php
     ├── 📂 /Gps
     │   └── 📂 /Api
     │       └── 📄 GpsApiController.php
@@ -2476,7 +2589,7 @@ class UserUpdateModel
 
     public bool $active = true;
 
-    public ?UploadedFile $image = null;
+    public ?SplFileInfo $image = null;
 }
 ```
 
@@ -2484,13 +2597,13 @@ class UserUpdateModel
 <td>
 
 ```php
-class UserUpdateModel
+final class UserUpdateModel
 {
     public string $name;
 
     public bool $active;
 
-    public ?UploadedFile $image;
+    public ?SplFileInfo $image;
 }
 ```
 
@@ -2520,6 +2633,9 @@ conditionally divide the `$image` property into 3 states:
 2. Initialised with `null` value - service must assign `null` and delete the image
 3. Initialised with a new value - service must assign a new value and delete the old image
 
+Detect state 1 with `new ReflectionProperty($model, 'image')->isInitialized($model)`. `isset($model->image)` cannot
+do it: it is `false` for state 1 and state 2 alike.
+
 > **Why?** Without defaults the service can distinguish "not provided" from "set to empty", which prevents partial
 > updates from silently overwriting existing data.
 
@@ -2530,7 +2646,8 @@ Model[^1] mustn't contain any logic, including static factory methods and proper
 property are logic). A model is built in exactly two places: the
 `Presentation` layer maps external input into it (form, serializer, command arguments), and a filler service (see
 [Filler and provider method naming](#filler-and-provider-method-naming)) builds it from entities or other internal
-data. Managers and composite services consume models; they never build one from a raw array.
+data (plus test builders, see [Build fixtures with builders](#build-fixtures-with-builders)). Managers and
+composite services consume models; they never build one from a raw array.
 
 <table>
     <thead>
@@ -2563,7 +2680,7 @@ class RenderQueueModel
 <td>
 
 ```php
-class RenderQueueModel
+final class RenderQueueModel
 {
     public string $format;
 
@@ -2618,7 +2735,7 @@ them into one composite service. For example, the composite `UserService` would 
 <td>
 
 ```php
-readonly class UserService
+final readonly class UserService
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
@@ -2644,10 +2761,10 @@ readonly class UserService
 <td>
 
 ```php
-readonly class UserService
+final readonly class UserService
 {
     public function __construct(
-        private UserManager $manager,
+        private UserManagerInterface $manager,
         private UserSynchronizer $synchronizer,
     ) {
     }
@@ -2679,7 +2796,9 @@ convenient. The classes will have a lot of dependencies, and it will be hard to 
 business logic.
 
 Creating a composite service that will contain several specific services solves these problems. Such a service simply
-delegates tasks to specific services and serves as an interface for interacting with other classes.
+delegates tasks to specific services and serves as an interface for interacting with other classes. Controllers,
+subscribers, handlers, and other composites inject the composite, or the lone specific service when the entity has
+no composite; they never reach past a composite to the specific service behind it.
 
 The split is required as soon as an entity has more than one specific service. A single specific service may stand
 alone under its job name (`OrderManager`); a class named `<Entity>Service` must always be a composite that holds no
@@ -2707,7 +2826,7 @@ authorization logic and vice versa. Otherwise, you will get one interconnected s
 <td>
 
 ```php
-readonly class UserManager
+final readonly class UserManager
 {
     public function __construct(
         private SecurityService $securityService,
@@ -2729,7 +2848,7 @@ readonly class UserManager
 <td>
 
 ```php
-readonly class UserManager
+final readonly class UserManager
 {
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,
@@ -2758,7 +2877,8 @@ readonly class UserManager
 ### Inject dependencies through the constructor
 <!-- rule: AD8 -->
 
-Pass every dependency as a constructor argument typed against the `Domain` interface. Never use setter injection,
+Pass every dependency as a constructor argument, typed against the `Domain` interface whenever the implementation
+lives in `Infrastructure` (a class of the same layer may be injected directly). Never use setter injection,
 `#[Required]`, a service locator, or the container inside a service. Never instantiate a service with `new`.
 
 | ❌ Wrong:                                         | ✅ Right:                                       |
@@ -2807,7 +2927,7 @@ final readonly class GpsService
 interface GpsProviderInterface
 {
     /** @return list<GpsPointModel> */
-    public function fetchLatest(): array;
+    public function provideLatest(): array;
 }
 
 // Infrastructure layer
@@ -2864,7 +2984,7 @@ Never concatenate or interpolate a value into SQL, DQL, or a query builder expre
 <!-- rule: TS1 -->
 
 Place every test under `tests/` at the same path as the class it tests, with the `Test` suffix:
-`src/Domain/Gps/Service/GpsService.php` → `tests/Domain/Gps/Service/GpsServiceTest.php`. Split by kind at the top
+`src/Application/Gps/GpsService.php` → `tests/Application/Gps/GpsServiceTest.php`. Split by kind at the top
 level only when the project needs it (`tests/Unit`, `tests/Integration`, `tests/Functional`).
 
 > **Why?** The location of a test is derivable from the class name, so nobody searches for it and nobody writes a
@@ -2873,14 +2993,14 @@ level only when the project needs it (`tests/Unit`, `tests/Integration`, `tests/
 ### Name tests by scenario
 <!-- rule: TS2 -->
 
-Name a test method after the behaviour it proves: `test<Method><Scenario><Expectation>` in camelCase, or a
-`#[Test]` attribute with a snake-case sentence. Never name a test after the method alone.
+Name a test method after the behaviour it proves: `test<Method><Scenario><Expectation>` in camelCase (PSR-1
+applies to tests too). Never name a test after the method alone.
 
 | ❌ Wrong:                     | ✅ Right:                                                    |
 |------------------------------|-------------------------------------------------------------|
 | `testCreate()`               | `testCreateWithDuplicateEmailThrowsException()`             |
 | `testCreate2()`              | `testCreateAssignsDefaultRole()`                            |
-| `testItWorks()`              | `#[Test] public function it_rejects_expired_token(): void`  |
+| `testItWorks()`              | `testValidateRejectsExpiredToken()`                         |
 
 > **Why?** The test name is the failure message. A scenario in the name tells the reader what broke without opening
 > the test.
@@ -2900,7 +3020,7 @@ public function testGetThrowsWhenProductIsMissing(): void
 
     $this->expectException(ProductNotFoundException::class);
 
-    $manager->get(42);
+    $manager->get(self::MISSING_PRODUCT_ID);
 }
 ```
 

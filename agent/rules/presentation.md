@@ -4,6 +4,7 @@ paths:
   - "src/**/Controller/**/*.php"
   - "src/**/Command/**/*.php"
   - "src/**/MessageHandler/**/*.php"
+  - "src/**/Messenger/Handler/**/*.php"
   - "config/routes*"
 ---
 
@@ -22,10 +23,10 @@ Loaded when editing controllers, commands, handlers, routes. IDs match the human
 ## Symfony naming
 
 - **SN1 Console command naming**: `app:<domain>:<action>` lowercase with hyphens (`app:import:pull-templates`); class `<Action><Domain>Command` (`PullTemplatesImportCommand`).
-- **SN2 Message handler naming**: message named after what should happen (`SendInvoiceMessage`), handler = same stem + `Handler` (`SendInvoiceHandler`); one handler per message; handler only delegates to an Application service.
+- **SN2 Message handler naming**: message named after what should happen (`SendInvoiceMessage`), handler = same stem + `Handler` (`SendInvoiceHandler`); one handler per message; handler lives in `Presentation/Messenger/Handler` and only delegates to an Application service.
 
 ## Boundary duties (see architecture rules)
 
 - Enums come from the framework mapping (enum-typed Model property, `EnumType`, `EnumRequirement`); `tryFrom()` only for console arguments and vendor payloads, `null` is a validation error (EN2).
 - Map request/CLI input into a Model and validate it here; services receive valid Models (AD10).
-- Controllers and handlers inject the composite `*Service`, never a `*Manager` or repository directly (AD6).
+- Controllers and handlers inject the composite `*Service`, or the lone specific service when the entity has no composite; never a specific service behind a composite, never a repository (AD6).
