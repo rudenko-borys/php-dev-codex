@@ -2987,42 +2987,46 @@ Never copy production records, real names, or real identifiers into tests.
 ### Branch naming
 <!-- rule: GT1 -->
 
-1. Use only lowercase letters, numbers, and hyphens
-2. Use a unique ID based on issue ID
-3. Use the issue name for the branch name
-4. Name must not exceed 8 words (excluding ID)
+Name the branch `<ISSUE-KEY>-<slug>`:
+
+1. The issue key exactly as the tracker writes it (`JIRA-123`), never lowercased or re-prefixed
+2. The slug is the issue title: lowercase, every run of non-alphanumeric characters becomes one hyphen, no
+   leading or trailing hyphen
+3. Keep the whole name under 80 characters; shorten the slug, never the key
 
 For example, there is an issue "JIRA-123 Add the ability to assign access to the Product for the User from the admin
 panel".
 
 | ❌ Wrong:                                                                             | ✅ Right:                                                   |
 |--------------------------------------------------------------------------------------|------------------------------------------------------------|
-| `JIRA-123_Add-the-ability-to-assign-access-to-the-Product-for-the-User-from-the-admin` | `jira-123-add-product-access-assignment-for-user-in-admin` |
+| `JIRA-123_Add-the-ability-to-assign-access-to-the-Product-for-the-User-from-the-admin` | `JIRA-123-add-product-access-assignment-for-user-in-admin` |
+| `jira-123-add-product-access`                                                          | `JIRA-123-add-product-access`                              |
+| `feature/add-product-access`                                                           | `JIRA-123-add-product-access`                              |
 
-> **Why?** A short, consistent branch name tied to the issue ID makes branches easy to find, sort, and trace back to
-> their task.
+> **Why?** This is the shape Jira, Bitbucket, GitLab, and GitHub generate from "Create branch", so the tracker links
+> the branch to the issue automatically. The key in its original case is what the tracker matches on, and a length
+> cap keeps the name usable in CI and on the filesystem.
 
 ### Meaningful commits
 <!-- rule: GT2 -->
 
-When committing your code, it's helpful to write useful commit messages.
+Write the subject line as `<ISSUE-KEY>: <Imperative subject>`:
 
-1. Start each message with issue ID
-2. Capitalise subject
-3. Use imperative commands such as: `add`, `remove`, `fix`, `refactor`, etc.
-4. Keep it brief. Message mustn't exceed 50 characters (excluding ID)
-5. Make small, specific commits
-6. Don't put a dot at the end
+1. Start with the issue key, exactly as in the branch name, followed by a colon
+2. Capitalise the subject and write it in the imperative: `Add`, `Remove`, `Fix`, `Refactor`
+3. Keep the whole subject line under 72 characters, no period at the end
+4. Add a body only when the *why* is not obvious from the diff; separate it from the subject by a blank line
+5. Make small, specific commits: one logical change each
 
-Your commit message should be able to end the phrase "If applied, this code will...".
+Your commit subject should be able to end the phrase "If applied, this commit will...".
 
-| ❌ Wrong:                      | ✅ Right:                                            |
-|-------------------------------|-----------------------------------------------------|
-| fixed bug                     | JIRA-123 Fix bug within login screen                |
-| refactored due to PR comments | JIRA-123 Refactor registration page for performance |
-| fixing previous commit        | JIRA-123 Fix validation tests for login form        |
-| made tests pass               | JIRA-123 Update login tests for forgotten password  |
-| jira-123 Some changes         | JIRA-123 Add product access service                 |
+| ❌ Wrong:                      | ✅ Right:                                             |
+|-------------------------------|------------------------------------------------------|
+| fixed bug                     | JIRA-123: Fix bug within login screen                |
+| refactored due to PR comments | JIRA-123: Refactor registration page for performance |
+| fixing previous commit        | JIRA-123: Fix validation tests for login form        |
+| made tests pass               | JIRA-123: Update login tests for forgotten password  |
+| jira-123 Some changes         | JIRA-123: Add product access service                 |
 
 > **Why?** Clear, imperative commit messages make the history readable and let reviewers understand each change without
 > opening the diff.

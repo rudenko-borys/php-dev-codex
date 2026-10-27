@@ -54,6 +54,8 @@ symlink (`.claude/rules/project.md`).
 - `rules/presentation.md` and `rules/tests.md`: edit the `paths:` globs if the project layout differs.
 - PHPStan level: the rules say "project level, `max` for new projects"; set the real one in `phpstan.neon` and run
   it in the project's quality gate (CI, pre-commit, or your agent framework's gates).
+- `rules/git.md`: skip it when the project already has a git workflow (a skill, `CONTRIBUTING.md`, or an agent
+  framework that owns branches, commits, and worktrees); two sources for the commit format is one too many.
 - Drop a rule file you don't need (a project without Messenger can delete `SN2` lines); run
   `php bin/check-sync.php` in this repository only, not in the project.
 
