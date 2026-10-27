@@ -85,7 +85,7 @@ heading (`<!-- rule: XX -->`). [RULE_FORMAT](RULE_FORMAT.md) describes how to wr
     * [Avoid uppercased abbreviations](#avoid-uppercased-abbreviations)
     * [Context duplication in naming](#context-duplication-in-naming)
     * [Avoid double plural constructions](#avoid-double-plural-constructions)
-    * [Name constants and enums consistently](#name-constants-and-enums-consistently)
+    * [Constant and enum case naming](#constant-and-enum-case-naming)
 - [Type naming](#type-naming)
     * [Class naming](#class-naming)
     * [Interface naming](#interface-naming)
@@ -1861,7 +1861,7 @@ Don't pluralize both parts of a compound name. Pluralize only the trailing noun.
 
 > **Why?** Pluralizing only the trailing noun reads as natural English and keeps the meaning unambiguous.
 
-### Name constants and enums consistently
+### Constant and enum case naming
 <!-- rule: GN5 -->
 
 Constants are `UPPER_SNAKE_CASE` and start with the shared prefix, followed by the specific part. Enum cases are
@@ -2055,6 +2055,13 @@ be named `findOne`.
 
 Public filler methods must start with `fill` only. Public provider methods must start with `provide` only.
 
+| ❌ Wrong:                                              | ✅ Right:                                                |
+|-------------------------------------------------------|---------------------------------------------------------|
+| `ImportHistoryFiller::createModel(ImportHistory $entity)` | `ImportHistoryFiller::fill(ImportHistory $entity)`   |
+| `ImportHistoryFiller::buildFromEntity(ImportHistory $entity)` | `ImportHistoryFiller::fillFromEntity(ImportHistory $entity)` |
+| `ProductProvider::getActiveProducts()`                | `ProductProvider::provideActive()`                      |
+| `ProductProvider::loadByCategory(Category $category)` | `ProductProvider::provideByCategory(Category $category)` |
+
 > **Why?** The prefix communicates the single responsibility of the class directly from the method name.
 
 ### Event naming
@@ -2106,13 +2113,24 @@ An event must have only one name to comply with the Single Responsibility Princi
 
 Use the event name for the event class name and add the `Event` suffix. See example above.
 
+| ❌ Wrong:                                   | ✅ Right:                                       |
+|--------------------------------------------|------------------------------------------------|
+| `class UserCreated` (`'user.created'`)     | `class UserCreatedEvent` (`'user.created'`)    |
+| `class CreatedUserEvent` (`'user.created'`) | `class UserCreatedEvent` (`'user.created'`)   |
+| `class UserEvent` (`'user.created'`, `'user.deleted'`) | `class UserCreatedEvent` + `class UserDeletedEvent` |
+
 > **Why?** Since an event can only have one concrete class, its name must match the `NAME` constant.
 
 ### Event subscriber naming
 <!-- rule: MN6 -->
 
 The subscriber must be named according to the action it will perform with the suffix `Subscriber`.
-Example: `ResetPasswordSubscriber`.
+
+| ❌ Wrong:                                   | ✅ Right:                                       |
+|--------------------------------------------|------------------------------------------------|
+| `class UserCreatedSubscriber`              | `class SendWelcomeEmailSubscriber`             |
+| `class UserEventListener`                  | `class ResetPasswordSubscriber`                |
+| `class UserSubscriber` (sends email, resets password) | `class SendWelcomeEmailSubscriber` + `class ResetPasswordSubscriber` |
 
 > **Why?** A subscriber can receive many events, but with the same required action, so its name must describe the
 > action it performs.
