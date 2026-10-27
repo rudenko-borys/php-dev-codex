@@ -13,8 +13,11 @@ Loaded when editing controllers, commands, handlers, routes. IDs match the human
 
 ## Routing
 
-- **RN1 Route path naming**: nouns, **plural** collections with the item as collection + ID (`/v1/store/products`, `/v1/store/products/{id}`, never `/product/{id}`), lowercase, hyphens (`/template-families`), no trailing slash, no extension, no verbs (`/GetProducts`), version prefix `/v1`.
-- **RN2 HTTP methods for actions**: `GET` read, `POST` create/process, `PUT` full replace, `PATCH` partial update, `DELETE` remove. Return accurate status codes (2xx success, 4xx client error, 5xx server error).
+- **RN1 Route path naming**: nouns, **plural** collections with the item as collection + ID (`/v1/store/products`, `/v1/store/products/{id}`, never `/product/{id}`), lowercase, hyphens (`/template-families`), no trailing slash, no extension, no verbs (`/GetProducts`), version as `/v1` prefix or a version header (one per API).
+- **RN2 HTTP methods for actions**: `GET` read, `POST` create/process, `PUT` full replace, `PATCH` partial update, `DELETE` remove; `GET`/`PUT`/`DELETE` idempotent, `POST` not. Status: `200` read/update with body, `201` created (+ body), `204` deleted or no body, `400` malformed, `401` no credentials, `403` no permission, `404` missing or hidden, `409` state conflict, `422` validation, `429` rate limit, `5xx` only for server faults.
+- **RN3 Nest resources one level deep**: `/v1/orders/{orderId}/items/{id}`, never a second nesting level (`/customers/{customerId}/orders/{orderId}/items`); deeper = top-level collection + filter (`/v1/items?order_id=`). Parent param `{<entity>Id}`, last param `{id}`.
+- **RN4 Filter, sort and paginate through query parameters**: filters/sort/pagination/fields only in the query string (`?status=active&sort=-price&page=1&per_page=50`), never in the path (`/products/active`); query params `snake_case`; every collection endpoint paginated.
+- **RN5 Name non-CRUD actions as sub-resources**: `POST /v1/orders/{id}/cancel`; the only verb allowed in a path, always `POST`; never `PATCH` with a status field or `GET` for an action.
 
 ## Symfony naming
 

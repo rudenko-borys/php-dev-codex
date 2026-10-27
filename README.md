@@ -103,6 +103,9 @@ heading (`<!-- rule: XX -->`). [RULE_FORMAT](RULE_FORMAT.md) describes how to wr
 - [Routing naming](#routing-naming)
     * [Route path naming](#route-path-naming)
     * [HTTP methods for actions](#http-methods-for-actions)
+    * [Nest resources one level deep](#nest-resources-one-level-deep)
+    * [Filter, sort and paginate through query parameters](#filter-sort-and-paginate-through-query-parameters)
+    * [Name non-CRUD actions as sub-resources](#name-non-crud-actions-as-sub-resources)
 - [Symfony naming](#symfony-naming)
     * [Console command naming](#console-command-naming)
     * [Message handler naming](#message-handler-naming)
@@ -2149,7 +2152,8 @@ The subscriber must be named according to the action it will perform with the su
 5. Don't use trailing forward slash
 6. Don't use file extensions
 7. Don't use CRUD function names
-8. Use versions
+8. Version the API: a `/v1` path prefix, or a version header (`Accept: application/vnd.app.v1+json`,
+   `Api-Version: 1`) when the path must stay stable; pick one per API
 
 | ❌ Wrong:                  | ✅ Right:                       |
 |---------------------------|--------------------------------|
@@ -2163,9 +2167,9 @@ The subscriber must be named according to the action it will perform with the su
 > Plural nouns are what every major API and routing tool expects, and they make the collection and the item differ
 > only by the ID (**2**). URL paths are case-sensitive, so `/Product` and `/product` are two different resources;
 > lowercase removes the ambiguity (**3**). Hyphens improve readability (**4**). A forward slash as last character
-> adds no semantic value (**5**). File extensions are unnecessary, the `Accept` header selects the format (**6**). By
-> versioning your APIs, you can provide an upgrade path without making any fundamental changes to existing APIs
-> (**8**).
+> adds no semantic value (**5**). File extensions are unnecessary, the `Accept` header selects the format (**6**). A
+> version lets you change the contract without breaking existing clients; a path prefix is visible and easy to route,
+> a header keeps one URL per resource across versions (**8**).
 
 ### HTTP methods for actions
 <!-- rule: RN2 -->
@@ -2180,14 +2184,75 @@ Use the correct HTTP method for each action so that clients and servers stay int
 | `PATCH`  | Partially updates a resource with specific changes.               |
 | `DELETE` | Removes a resource.                                               |
 
-Return accurate HTTP status codes so clients can handle errors and success cases gracefully:
+`GET`, `PUT`, and `DELETE` are idempotent: repeating the request gives the same result and no extra side effect.
+`POST` is not; a retried `POST` creates a second resource unless the endpoint accepts an idempotency key.
 
-- **2xx – Success:** the request was successfully received, understood, and accepted.
-- **3xx – Redirection:** the request must perform further actions to complete.
-- **4xx – Client Error:** the request has bad syntax or cannot be fulfilled.
-- **5xx – Server Error:** the server failed to fulfill a seemingly valid request.
+Return the status code that matches the outcome:
 
-> **Why?** Standard methods and status codes give a uniform interface and consistent, predictable feedback to clients.
+| Code  | When                                                                                   |
+|-------|----------------------------------------------------------------------------------------|
+| `200` | `GET` succeeded; `PUT`/`PATCH` succeeded and returns the resource.                     |
+| `201` | `POST` created a resource; return the resource in the body.                            |
+| `204` | `DELETE` succeeded, or `PUT`/`PATCH` succeeded with nothing to return.                 |
+| `400` | The request is malformed (invalid JSON, wrong types).                                  |
+| `401` | No or invalid credentials.                                                             |
+| `403` | Valid credentials, no permission for this action.                                      |
+| `404` | The resource does not exist, or exists but must stay hidden from this client.          |
+| `409` | The request conflicts with the current state (duplicate, stale version).               |
+| `422` | The request is well-formed but fails validation (what `#[MapRequestPayload]` returns). |
+| `429` | Rate limit exceeded.                                                                   |
+| `5xx` | The server failed on a valid request; never for a client mistake.                      |
+
+> **Why?** Standard methods and status codes give a uniform interface and consistent, predictable feedback to
+> clients. A client can retry an idempotent request blindly, and can tell from `422` vs `400` vs `409` whether to fix
+> the data, the request, or wait.
+
+### Nest resources one level deep
+<!-- rule: RN3 -->
+
+Nest a collection under its parent only one level: `/v1/orders/{orderId}/items`. Anything deeper becomes a top-level
+collection with a filter. Name the parent's parameter `{<entity>Id}` and the last resource's parameter `{id}`.
+
+| ❌ Wrong:                                                       | ✅ Right:                                         |
+|----------------------------------------------------------------|--------------------------------------------------|
+| `/v1/customers/{customerId}/orders/{orderId}/items/{itemId}`   | `/v1/orders/{orderId}/items/{id}`                |
+| `/v1/customers/{customerId}/orders/{orderId}/items`            | `/v1/items?order_id={orderId}`                   |
+| `/v1/orders/{id}/items/{id}`                                   | `/v1/orders/{orderId}/items/{id}`                |
+
+> **Why?** Every nesting level is one more ID the client must know and one more lookup the server must do before
+> reaching the resource. One level keeps the ownership visible without turning the URL into a query.
+
+### Filter, sort and paginate through query parameters
+<!-- rule: RN4 -->
+
+Filtering, sorting, pagination, and field selection go in the query string, never in the path. Query parameter names
+are `snake_case`. Every collection endpoint is paginated; there is no "return everything" mode.
+
+| ❌ Wrong:                                   | ✅ Right:                                                       |
+|--------------------------------------------|----------------------------------------------------------------|
+| `/v1/products/active`                      | `/v1/products?status=active`                                   |
+| `/v1/products/sorted-by-price`             | `/v1/products?sort=-price`                                     |
+| `/v1/products?createdAfter=...`            | `/v1/products?created_after=...`                               |
+| `/v1/products` (returns all rows)          | `/v1/products?page=1&per_page=50` (or `cursor=`)               |
+
+> **Why?** The path identifies a resource, the query describes a view of it. Separating the two keeps one URL per
+> collection, and pagination keeps response size and query time bounded as the table grows.
+
+### Name non-CRUD actions as sub-resources
+<!-- rule: RN5 -->
+
+An action that does not map to create, read, update, or delete is a `POST` to a verb sub-resource of the item:
+`POST /v1/orders/{id}/cancel`. This is the only place a verb appears in a path, and it is always `POST`.
+
+| ❌ Wrong:                                   | ✅ Right:                                      |
+|--------------------------------------------|-----------------------------------------------|
+| `POST /v1/cancel-order/{id}`               | `POST /v1/orders/{id}/cancel`                 |
+| `PATCH /v1/orders/{id}` with `{"status": "cancelled"}` | `POST /v1/orders/{id}/cancel`      |
+| `GET /v1/invoices/{id}/send`               | `POST /v1/invoices/{id}/send`                 |
+
+> **Why?** Cancelling, sending, or approving is a transition with its own rules, not a field update; a dedicated
+> endpoint gives it its own validation and permissions, and `POST` signals that it changes state and is not safe to
+> retry.
 
 ## Symfony naming
 
