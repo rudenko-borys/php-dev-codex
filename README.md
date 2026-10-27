@@ -1466,7 +1466,7 @@ try {
     // a lot of code
     // ...
     // ...
-} catch (UnknownProductTypeException $exception) {
+} catch (UnknownTypeException $exception) {
     // a lot of code
     // ...
     // ...
@@ -1479,7 +1479,7 @@ try {
 ```php
 try {
     $this->someDeepMethod();
-} catch (UnknownProductTypeException $exception) {
+} catch (UnknownTypeException $exception) {
     $this->handleError($exception);
 }
 ```
@@ -1628,12 +1628,44 @@ function send(string $email): object {
 Add PHPDoc to describe element types when using `arrays` or `Collections` as arguments, properties, or return
 types. Use `list<T>` for sequential arrays, `array<K, V>` for maps, and `array{...}` shapes for fixed keys.
 
+<table>
+    <thead>
+        <tr>
+            <th>❌ Wrong</th>
+            <th>✅ Right</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td>
+
+```php
+public function getProducts(): Collection;
+
+public function findByIds(array $ids): array;
+```
+
+</td>
+<td>
+
 ```php
 /**
  * @return Collection<int, Product>
  */
 public function getProducts(): Collection;
+
+/**
+ * @param list<int> $ids
+ *
+ * @return array<int, Product>
+ */
+public function findByIds(array $ids): array;
 ```
+
+</td>
+        </tr>
+    </tbody>
+</table>
 
 > **Why?** IDEs use this information to provide auto-completion and type warnings.
 
