@@ -7,6 +7,10 @@ This repository is a coding style guide, not an application. Two deliverables mu
 - `agent/rules/*.md`: the Claude Code version, one line per rule with the same ID. `agent/README.md` explains the
   layout and the writing style for agent rules.
 
+`LARAVEL.md` is a third document: Laravel framework rules (`LV*`) and module architecture rules (`MA*`) in the same
+`RULE_FORMAT.md` format, with its own table of contents. It has no agent version yet and `bin/check-sync.php` does not
+check it. Its examples target PHP 8.5 and Laravel 12/13.
+
 ## Working on rules
 
 - Read `RULE_FORMAT.md` before adding or editing a rule.
